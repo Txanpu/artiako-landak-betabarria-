@@ -2,6 +2,7 @@
 import React from 'react';
 import { GameState, TileData, Player } from '../../../../../types';
 import { formatMoney } from '../../../../../utils/gameLogic';
+import { canAuction, canBuyDirectly } from '../../../../../utils/governmentRules';
 
 interface Props {
     state: GameState;
@@ -16,11 +17,12 @@ export const CasinoEntradaView: React.FC<Props> = ({ state, dispatch, t, current
     const isAtLocation = currentPlayer && currentPlayer.pos === t.id;
     
     // Authorization Logic
-    const canBuyDirect = isOwnerlessProp && isAtLocation && currentPlayer && currentPlayer.money >= (t.price || 0) && state.gov === 'authoritarian';
-    const canAuction = isOwnerlessProp && isAtLocation && ['right', 'libertarian', 'anarchy'].includes(state.gov);
+    const canBuyDirect = isOwnerlessProp && isAtLocation && currentPlayer && currentPlayer.money >= (t.price || 0) && canBuyDirectly(state.gov);
+    const allowAuction = isOwnerlessProp && isAtLocation && canAuction(state.gov);
     
     const mortgageValue = Math.floor((t.price || 0) * 0.5);
     const isRoulette = t.subtype === 'casino_roulette';
+    const isClosed = state.gov === 'left';
 
     return (
         <div className="bg-[#0f2015] w-full max-w-sm rounded-xl overflow-hidden shadow-[0_0_60px_rgba(255,215,0,0.3)] border-4 border-[#b8860b] animate-in zoom-in-95 relative" onClick={e => e.stopPropagation()}>
@@ -39,16 +41,23 @@ export const CasinoEntradaView: React.FC<Props> = ({ state, dispatch, t, current
                         ROYAL CASINO
                     </div>
                 </div>
+                {isClosed && (
+                    <div className="absolute inset-0 bg-red-900/90 flex items-center justify-center rotate-12 z-20">
+                        <div className="border-4 border-white text-white font-black text-2xl uppercase p-2 tracking-widest shadow-xl">
+                            CLAUSURADO
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Content Body */}
-            <div className="p-6 bg-[url('https://www.transparenttextures.com/patterns/felt.png')] bg-green-900 relative">
+            <div className={`p-6 bg-[url('https://www.transparenttextures.com/patterns/felt.png')] bg-green-900 relative ${isClosed ? 'grayscale opacity-50 pointer-events-none' : ''}`}>
                 {/* Owner Badge */}
                 <div className="flex justify-between items-center bg-black/40 p-3 rounded border border-yellow-700/50 mb-4 backdrop-blur-sm">
                     <div>
                         <div className="text-[9px] text-yellow-500 uppercase font-bold tracking-wider">Gerente / Propietario</div>
                         <div className="text-white font-bold text-sm">
-                            {t.owner === 'E' ? 'ESTADO' : (t.owner ? state.players.find(p => p.id === t.owner)?.name : 'VACANTE')}
+                            {t.owner === 'E' ? 'ESTADO' : (t.owner !== null && t.owner !== undefined ? state.players.find(p => p.id === t.owner)?.name : 'VACANTE')}
                         </div>
                     </div>
                     <div className="text-right">
@@ -66,8 +75,8 @@ export const CasinoEntradaView: React.FC<Props> = ({ state, dispatch, t, current
 
                 {/* Actions */}
                 <div className="space-y-3">
-                    {/* Play Button */}
-                    {isAtLocation && (
+                    {/* Play Button - Only if Owned (by Player or State) */}
+                    {isAtLocation && t.owner !== null && (
                         <button 
                             onClick={() => { dispatch({type: 'CLOSE_MODAL'}); dispatch({type: 'PLAY_CASINO', payload: {game: isRoulette ? 'roulette' : 'blackjack'}}); }} 
                             className="w-full bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white font-black py-4 rounded-lg shadow-lg border-b-4 border-red-900 active:scale-95 transition-all text-lg flex justify-center items-center gap-2"
@@ -77,13 +86,19 @@ export const CasinoEntradaView: React.FC<Props> = ({ state, dispatch, t, current
                         </button>
                     )}
 
+                    {isAtLocation && t.owner === null && (
+                        <div className="w-full bg-black/40 border border-yellow-700 text-yellow-500 py-3 px-4 rounded-lg text-xs text-center font-bold uppercase tracking-wider mb-2">
+                            🚫 Casino Cerrado (En Venta)
+                        </div>
+                    )}
+
                     {/* Management Buttons */}
                     {canBuyDirect && (
                         <button onClick={() => {dispatch({type: 'BUY_PROP'}); dispatch({type: 'CLOSE_MODAL'})}} className="w-full bg-yellow-600 hover:bg-yellow-500 text-black font-black py-3 rounded-lg shadow-lg border-b-4 border-yellow-800 active:scale-95 uppercase text-xs">
                             Adquirir Licencia
                         </button>
                     )}
-                    {canAuction && (
+                    {allowAuction && (
                         <button onClick={() => {dispatch({type: 'START_AUCTION', payload: t.id}); dispatch({type: 'CLOSE_MODAL'})}} className="w-full bg-purple-700 hover:bg-purple-600 text-white font-bold py-3 rounded-lg border-b-4 border-purple-900 active:scale-95 uppercase text-xs">
                             Subastar Licencia
                         </button>
@@ -100,6 +115,11 @@ export const CasinoEntradaView: React.FC<Props> = ({ state, dispatch, t, current
                     </button>
                 </div>
             </div>
+            {isClosed && (
+                <div className="absolute bottom-4 w-full text-center text-red-500 font-bold text-xs uppercase z-30">
+                    Prohibido por Gobierno de Izquierdas
+                </div>
+            )}
         </div>
     );
 };

@@ -19,7 +19,8 @@ import { ElectionModal } from './components/modals/ElectionModal';
 import { QuizModal } from './components/modals/QuizModal';
 import { PokemonModal } from './components/modals/PokemonModal'; 
 import { GovGuideModal } from './components/modals/GovGuideModal'; 
-import { WeatherModal } from './components/modals/WeatherModal'; // NEW
+import { WeatherModal } from './components/modals/WeatherModal'; 
+import { FbiModal } from './components/modals/FbiModal'; // NEW
 import { GameState } from './types';
 import { createInitialState, makeHistory, makeWatchdog } from './utils/gameLogic';
 import { gameReducer } from './utils/gameReducer';
@@ -114,6 +115,7 @@ const App: React.FC = () => {
       <PokemonModal state={state} dispatch={dispatch} />
       <GovGuideModal state={state} dispatch={dispatch} />
       <WeatherModal state={state} dispatch={dispatch} />
+      <FbiModal state={state} dispatch={dispatch} />
 
       {setupOpen && <SetupModal onStartGame={(p) => { dispatch({type:'START_GAME', payload: p}); setSetupOpen(false); }} />}
       

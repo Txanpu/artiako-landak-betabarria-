@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { GameState, TileType, Player } from '../../types';
+import { canAuction, canBuyDirectly } from '../../utils/governmentRules';
 
 interface Props {
     state: GameState;
@@ -15,11 +16,12 @@ export const ActionPanel: React.FC<Props> = ({ state, player, onRoll, isRolling,
     const isOwnerless = currentTile?.type === TileType.PROP && currentTile.owner === null;
     const mustPayRent = currentTile?.type === TileType.PROP && currentTile.owner !== null && currentTile.owner !== player.id && currentTile.owner !== 'E';
     
-    const canBuy = isOwnerless && player.money >= (currentTile.price || 0) && state.gov === 'authoritarian';
-    const canAuction = isOwnerless && ['right', 'libertarian', 'anarchy'].includes(state.gov);
+    const canBuy = isOwnerless && player.money >= (currentTile.price || 0) && canBuyDirectly(state.gov);
+    const allowAuction = isOwnerless && canAuction(state.gov);
     const isBlocked = isOwnerless && state.gov === 'left';
     
     const isHacker = player.role === 'hacker';
+    const isFbi = player.role === 'fbi';
 
     // Farlopa Logic
     const isNight = state.world.isNight;
@@ -32,11 +34,28 @@ export const ActionPanel: React.FC<Props> = ({ state, player, onRoll, isRolling,
     const hasStash = (player.farlopa || 0) > 0;
     const isHigh = (player.highTurns || 0) > 0;
 
+    // Ability Config
+    const abilityConfig = {
+        male: { name: 'Mansplaining', icon: '📢', desc: 'Obliga a rival a perder turno' },
+        female: { name: 'Cancelación', icon: '🚫', desc: 'Bloquea renta rival 2 turnos' },
+        helicoptero: { name: 'Napalm', icon: '💣', desc: 'Destruye edificio aleatorio (-$300)' },
+        marcianito: { name: 'Abducción', icon: '🛸', desc: 'Intercambia posición con rival' }
+    }[player.gender];
+    const abilityCooldown = player.genderAbilityCooldown;
+    const canUseAbility = abilityCooldown === 0;
+
+    // Block interactions if Election is open
+    const isElectionOpen = state.election && state.election.isOpen;
+
     return (
         <div className="p-4 grid grid-cols-4 gap-2 border-b border-slate-800">
             {/* MAIN ACTION AREA (Full Width) */}
             <div className="col-span-4 mb-2">
-                {!state.rolled && state.pendingMoves === 0 && !isRolling ? (
+                {isElectionOpen ? (
+                    <div className="w-full bg-blue-900/50 border border-blue-500 text-blue-200 text-center py-4 rounded-xl animate-pulse font-bold">
+                        🗳️ ELECCIONES EN CURSO...
+                    </div>
+                ) : !state.rolled && state.pendingMoves === 0 && !isRolling ? (
                     <div className="flex flex-col gap-2">
                         {hasStash && !isHigh && (
                             <button 
@@ -84,7 +103,7 @@ export const ActionPanel: React.FC<Props> = ({ state, player, onRoll, isRolling,
                                 )}
 
                                 {canBuy && <ActionButton label="COMPRAR" sub={`$${currentTile.price}`} color="blue" onClick={() => dispatch({type: 'BUY_PROP'})} />}
-                                {canAuction && <ActionButton label="SUBASTAR" color="purple" onClick={() => dispatch({type: 'START_AUCTION', payload: currentTile.id})} />}
+                                {allowAuction && <ActionButton label="SUBASTAR" color="purple" onClick={() => dispatch({type: 'START_AUCTION', payload: currentTile.id})} />}
                                 {mustPayRent && <ActionButton label="PAGAR RENTA" color="red" onClick={() => dispatch({type: 'PAY_RENT'})} fullWidth />}
                                 
                                 {isBlocked && (
@@ -106,24 +125,56 @@ export const ActionPanel: React.FC<Props> = ({ state, player, onRoll, isRolling,
             </div>
 
             {/* SECONDARY ACTIONS (Icons) */}
+            
+            {/* NEW: GENDER ABILITY BUTTON */}
+            <button 
+                onClick={() => dispatch({ type: 'TRIGGER_GENDER_ABILITY' })}
+                disabled={!canUseAbility || isElectionOpen}
+                className={`group rounded-lg flex flex-col items-center justify-center p-1 border transition-all relative overflow-hidden shadow-sm active:scale-95
+                    ${canUseAbility && !isElectionOpen
+                        ? (player.gender === 'female' ? 'bg-pink-900/50 border-pink-500 text-pink-400 hover:bg-pink-800' : 
+                           player.gender === 'helicoptero' ? 'bg-orange-900/50 border-orange-500 text-orange-400 hover:bg-orange-800' :
+                           player.gender === 'marcianito' ? 'bg-green-900/50 border-green-500 text-green-400 hover:bg-green-800' :
+                           'bg-blue-900/50 border-blue-500 text-blue-400 hover:bg-blue-800')
+                        : 'bg-slate-900 border-slate-700 text-slate-600 cursor-not-allowed opacity-60'
+                    }
+                `}
+                title={`${abilityConfig.name}: ${abilityConfig.desc}`}
+            >
+                <span className="text-xl relative z-10">{abilityConfig.icon}</span>
+                {!canUseAbility && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-20 font-black text-[10px] text-white backdrop-blur-[1px]">
+                        {abilityCooldown}t
+                    </div>
+                )}
+            </button>
+
             <IconButton icon="🤝" label="Trade" onClick={() => dispatch({type: 'PROPOSE_TRADE'})} />
             <IconButton icon="🏦" label="Banco" onClick={() => dispatch({type: 'TOGGLE_BANK_MODAL'})} />
             <IconButton icon="📈" label="Stats" onClick={() => dispatch({type: 'TOGGLE_BALANCE_MODAL'})} />
             
-            {/* Dark Web Button */}
-            <button 
-                onClick={() => dispatch({type: 'TOGGLE_DARK_WEB'})} 
-                disabled={!isHacker}
-                className={`rounded-lg flex flex-col items-center justify-center p-1 border transition-all relative overflow-hidden group
-                    ${isHacker 
-                        ? 'bg-black border-green-500/50 text-green-500 hover:border-green-400 hover:shadow-[0_0_10px_rgba(74,222,128,0.3)]' 
-                        : 'bg-slate-900 border-slate-700 text-slate-600 cursor-not-allowed opacity-60'}
-                `}
-                title={isHacker ? "Acceso Dark Web" : "Encriptado"}
-            >
-                <span className="text-xl relative z-10">{isHacker ? '🕸️' : '🔒'}</span>
-                {isHacker && <div className="absolute inset-0 bg-green-500/5 animate-pulse pointer-events-none"></div>}
-            </button>
+            {/* Dark Web Button (Hacker) */}
+            {isHacker && (
+                <button 
+                    onClick={() => dispatch({type: 'TOGGLE_DARK_WEB'})} 
+                    className="rounded-lg flex flex-col items-center justify-center p-1 border transition-all relative overflow-hidden group bg-black border-green-500/50 text-green-500 hover:border-green-400 hover:shadow-[0_0_10px_rgba(74,222,128,0.3)]"
+                    title="Acceso Dark Web"
+                >
+                    <span className="text-xl relative z-10">🕸️</span>
+                    <div className="absolute inset-0 bg-green-500/5 animate-pulse pointer-events-none"></div>
+                </button>
+            )}
+
+            {/* FBI Dossier Button (FBI) */}
+            {isFbi && (
+                <button 
+                    onClick={() => dispatch({type: 'TOGGLE_FBI_MODAL'})} 
+                    className="rounded-lg flex flex-col items-center justify-center p-1 border transition-all relative overflow-hidden group bg-slate-900 border-green-700 text-green-400 hover:border-green-500 hover:bg-slate-800"
+                    title="Investigación Federal"
+                >
+                    <span className="text-xl relative z-10">🕵️</span>
+                </button>
+            )}
         </div>
     );
 };

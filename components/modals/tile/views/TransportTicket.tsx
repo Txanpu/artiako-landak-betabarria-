@@ -2,6 +2,7 @@
 import React from 'react';
 import { GameState, TileData, Player } from '../../../../types';
 import { formatMoney, getAvailableTransportHops, getRentTable } from '../../../../utils/gameLogic';
+import { canAuction, canBuyDirectly } from '../../../../utils/governmentRules';
 
 interface Props {
     state: GameState;
@@ -16,8 +17,8 @@ export const TransportTicket: React.FC<Props> = ({ state, dispatch, t, currentPl
     const isOwnerlessProp = t.owner === null;
     const isAtLocation = currentPlayer && currentPlayer.pos === t.id;
     
-    const canBuyDirect = isOwnerlessProp && isAtLocation && currentPlayer && currentPlayer.money >= (t.price || 0) && state.gov === 'authoritarian';
-    const canAuction = isOwnerlessProp && isAtLocation && ['right', 'libertarian', 'anarchy'].includes(state.gov);
+    const canBuyDirect = isOwnerlessProp && isAtLocation && currentPlayer && currentPlayer.money >= (t.price || 0) && canBuyDirectly(state.gov);
+    const allowAuction = isOwnerlessProp && isAtLocation && canAuction(state.gov);
     
     const mortgageValue = Math.floor((t.price || 0) * 0.5);
 
@@ -106,7 +107,7 @@ export const TransportTicket: React.FC<Props> = ({ state, dispatch, t, currentPl
 
                 <div className="grid grid-cols-2 gap-2 mt-2">
                     {canBuyDirect && <button onClick={() => {dispatch({type: 'BUY_PROP'}); dispatch({type: 'CLOSE_MODAL'})}} className="col-span-2 bg-slate-800 text-white py-2 rounded font-bold">Comprar Billete (${t.price})</button>}
-                    {canAuction && <button onClick={() => {dispatch({type: 'START_AUCTION', payload: t.id}); dispatch({type: 'CLOSE_MODAL'})}} className="col-span-2 bg-purple-600 text-white py-2 rounded font-bold">Subastar</button>}
+                    {allowAuction && <button onClick={() => {dispatch({type: 'START_AUCTION', payload: t.id}); dispatch({type: 'CLOSE_MODAL'})}} className="col-span-2 bg-purple-600 text-white py-2 rounded font-bold">Subastar</button>}
                     {isOwner && !t.mortgaged && (
                         <button onClick={() => dispatch({type: 'MORTGAGE_PROP', payload: {tId: t.id}})} className="col-span-2 border border-red-500 text-red-600 hover:bg-red-50 py-1 rounded text-xs font-bold">Hipotecar (+{formatMoney(mortgageValue)})</button>
                     )}

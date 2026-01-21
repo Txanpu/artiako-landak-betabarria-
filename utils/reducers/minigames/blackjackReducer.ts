@@ -1,11 +1,15 @@
 
 import { GameState } from '../../../types';
-import { isPowerOff } from '../../gameLogic';
+import { isPowerOff, canProxenetaCheat } from '../../gameLogic';
 import { generateDeck, calculateHand, handleCasinoBankruptcy } from '../../minigames/casinoHelpers';
 
 export const blackjackReducer = (state: GameState, action: any): GameState => {
     switch (action.type) {
         case 'START_BLACKJACK': {
+            if (state.gov === 'left') {
+                return { ...state, showCasinoModal: false, logs: ['🚫 Blackjack clausurado por el Gobierno.', ...state.logs] };
+            }
+
             if (state.casinoPlays >= 3) {
                  return { ...state, logs: ['🚫 Límite de 3 jugadas por turno alcanzado.', ...state.logs] };
             }
@@ -98,18 +102,42 @@ export const blackjackReducer = (state: GameState, action: any): GameState => {
             let payout = 0;
             let msg = '';
             
-            if (dScore > 21) {
-                msg = '🎉 DEALER SE PASA. ¡GANAS!';
+            // --- CHECK WIN ---
+            let playerWins = false;
+            let push = false;
+
+            if (dScore > 21) playerWins = true;
+            else if (pScore > dScore) playerWins = true;
+            else if (pScore === dScore) push = true;
+
+            // --- PROXENETA CHEAT (Dealer Flip) ---
+            if (!playerWins && !push) {
+                const pIdx = state.currentPlayerIndex;
+                const player = state.players[pIdx];
+                if (canProxenetaCheat(player, 0.40)) {
+                    // Cheat! Force Dealer Bust artificially or trigger win state
+                    playerWins = true; 
+                    msg = `🃏 TRUCO: ¡Dealer se confunde y paga! GANAS (${pScore})`;
+                }
+            }
+
+            if (!msg) {
+                if (playerWins) {
+                    if (dScore > 21) msg = '🎉 DEALER SE PASA. ¡GANAS!';
+                    else msg = `🏆 GANAS (${pScore} vs ${dScore})`;
+                } else if (push) {
+                    msg = `🤝 EMPATE (${pScore})`;
+                } else {
+                    msg = `❌ PIERDES (${pScore} vs ${dScore})`;
+                }
+            }
+            
+            if (playerWins) {
                 payout = bjs.bet * 2;
-            } else if (pScore > dScore) {
-                msg = `🏆 GANAS (${pScore} vs ${dScore})`;
-                payout = bjs.bet * 2;
-                if (pScore === 21 && bjs.playerHand.length === 2) payout = Math.floor(bjs.bet * 2.5); 
-            } else if (pScore === dScore) {
-                msg = `🤝 EMPATE (${pScore})`;
+                if (pScore === 21 && bjs.playerHand.length === 2) payout = Math.floor(bjs.bet * 2.5);
+            } else if (push) {
                 payout = bjs.bet;
             } else {
-                msg = `❌ PIERDES (${pScore} vs ${dScore})`;
                 payout = 0;
             }
             

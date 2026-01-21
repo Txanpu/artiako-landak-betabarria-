@@ -1,6 +1,8 @@
 
 import { GameState, GovernmentType, TileType } from '../../types';
 import { GOV_CONFIGS } from './config';
+import { getColorGroup } from '../ai/constants';
+import { formatMoney } from '../gameLogic';
 
 export const handleGovernmentTick = (state: GameState): Partial<GameState> => {
     let newState = { ...state };
@@ -10,61 +12,171 @@ export const handleGovernmentTick = (state: GameState): Partial<GameState> => {
     let newBankHotels = newState.hotelsAvail;
     let govLogs: string[] = [];
     let updatedTiles = [...newState.tiles];
+    let updatedPlayers = [...state.players];
 
-    // 1. ANARCHY REVOLUTION (Breaking Houses)
+    // 1. LEFT GOVERNMENT LOGIC
+    if (newState.gov === 'left') {
+        // A. Wealth Tax
+        updatedPlayers = updatedPlayers.map(p => {
+            if (p.money > 2000) {
+                const tax = Math.floor(p.money * 0.05);
+                if (tax > 0) {
+                    newEstadoMoney += tax;
+                    govLogs.push(`⚖️ Impuesto Riqueza: ${p.name} paga ${formatMoney(tax)} al Estado.`);
+                    return { ...p, money: p.money - tax };
+                }
+            }
+            return p;
+        });
+
+        // B. Expropriation
+        const colors = [...new Set(updatedTiles.filter(t => t.color).map(t => t.color!))];
+        colors.forEach(c => {
+            const group = getColorGroup(updatedTiles, c);
+            if (group.length === 0) return;
+            const firstOwner = group[0].owner;
+            
+            if (typeof firstOwner === 'number' && group.every(t => t.owner === firstOwner)) {
+                const hasBuildings = group.some(t => (t.houses || 0) > 0 || t.hotel);
+                if (!hasBuildings && Math.random() < 0.05) {
+                    const target = group[Math.floor(Math.random() * group.length)];
+                    const ownerName = updatedPlayers.find(p => p.id === firstOwner)?.name;
+                    target.owner = 'E';
+                    govLogs.push(`🏚️ EXPROPIACIÓN USO SOCIAL: El Estado confisca ${target.name} a ${ownerName} por falta de uso.`);
+                }
+            }
+        });
+    }
+
+    // 2. RIGHT GOVERNMENT LOGIC
+    if (newState.gov === 'right') {
+        // A. Offshore Interest (5%)
+        updatedPlayers = updatedPlayers.map(p => {
+            if ((p.offshoreMoney || 0) > 0) {
+                const interest = Math.floor(p.offshoreMoney! * 0.05);
+                if (interest > 0) {
+                    govLogs.push(`📈 Paraíso Fiscal: ${p.name} genera ${formatMoney(interest)} de intereses.`);
+                    return { ...p, offshoreMoney: (p.offshoreMoney || 0) + interest };
+                }
+            }
+            return p;
+        });
+
+        // B. Desokupa Express
+        updatedTiles = updatedTiles.map(t => {
+            if (t.blockedRentTurns && t.blockedRentTurns > 0) {
+                govLogs.push(`👮 Desokupa Express: La policía desaloja a los ocupantes de ${t.name}.`);
+                return { ...t, blockedRentTurns: 0 };
+            }
+            return t;
+        });
+    }
+
+    // 3. ANARCHY REVOLUTION
     if (newState.gov === 'anarchy') {
         let brokenCount = 0;
+        
+        // A. Destruction
         updatedTiles = updatedTiles.map(t => {
             if (t.type === TileType.PROP && t.owner && t.owner !== 'E' && !t.isBroken) {
-                // 5% chance to break per turn
                 if (Math.random() < 0.05) {
                     const hasBuildings = (t.houses || 0) > 0 || t.hotel;
-                    return {
-                        ...t,
-                        isBroken: true,
-                        // Reset buildings if they exist
-                        houses: 0,
-                        hotel: false
-                    };
                     if (hasBuildings) {
                         if (t.hotel) newBankHotels++;
                         else newBankHouses += (t.houses || 0);
                         govLogs.push(`🔥 ¡REVOLUCIÓN! Han quemado ${t.name}. Edificios destruidos.`);
+                        return { ...t, houses: 0, hotel: false, isBroken: true };
                     } else {
                         govLogs.push(`🔥 ¡REVOLUCIÓN! Han destrozado ${t.name}. Necesita reparaciones.`);
+                        return { ...t, isBroken: true };
                     }
                     brokenCount++;
                 }
             }
             return t;
         });
+
+        // B. NARCO CARTELS
+        const colors = [...new Set(updatedTiles.filter(t => t.color).map(t => t.color!))];
+        colors.forEach(c => {
+            const group = getColorGroup(updatedTiles, c);
+            if (group.length === 0) return;
+            const firstOwner = group[0].owner;
+            
+            if (firstOwner && typeof firstOwner === 'number' && group.every(t => t.owner === firstOwner && !t.mortgaged && !t.isBroken)) {
+                updatedPlayers = updatedPlayers.map(p => {
+                    if (p.id === firstOwner) {
+                        return { ...p, farlopa: (p.farlopa || 0) + 1 };
+                    }
+                    return p;
+                });
+                govLogs.push(`📦 Cártel ${c.toUpperCase()}: Producción de Farlopa entregada al Capo.`);
+            }
+        });
+
         if (brokenCount > 0 && govLogs.length === 0) govLogs.push(`🔥 Disturbios en Artia: ${brokenCount} propiedades dañadas.`);
     }
 
-    // 2. Money Printer (Inflation) - Autoritario Logic moved here partly?
-    // Actually, Navigation reducer handles salary printing. Here we handle random injection.
-    if(['left','right','authoritarian'].includes(newState.gov) && Math.random() < 0.02) { 
-        newEstadoMoney += 800;
-        govLogs.push('🖨️ "Money Printer Go Brrr": El gobierno inyecta $800.');
+    // 4. AUTHORITARIAN LOGIC
+    if (newState.gov === 'authoritarian') {
+        // A. Money Printer if State is broke
+        if (newEstadoMoney < 500) {
+             newEstadoMoney += 1000;
+             govLogs.push('🖨️ Banco Central: El Régimen imprime billetes para mantener el control.');
+        }
+
+        // B. Expropiación de "Vagos y Maleantes" (Solares vacíos)
+        if (Math.random() < 0.15) {
+            const undevelopedProps = updatedTiles.filter(t => 
+                t.type === TileType.PROP && 
+                t.owner !== null && 
+                typeof t.owner === 'number' && 
+                (t.houses || 0) === 0 && 
+                !t.hotel
+            );
+
+            if (undevelopedProps.length > 0) {
+                const target = undevelopedProps[Math.floor(Math.random() * undevelopedProps.length)];
+                const victim = updatedPlayers.find(p => p.id === target.owner);
+                if (victim) {
+                    target.owner = 'E'; // Seize to State
+                    target.mortgaged = false; // Reset mortgage status
+                    govLogs.push(`👮 LEY DE VAGOS: El Régimen expropia ${target.name} a ${victim.name} por falta de productividad.`);
+                }
+            }
+        }
+
+        // C. FORCED LABOR IN JAIL (Gulag)
+        updatedPlayers = updatedPlayers.map(p => {
+            if (p.jail > 0) {
+                const laborValue = 50;
+                if (p.money >= laborValue) {
+                    p.money -= laborValue;
+                    newEstadoMoney += laborValue;
+                    govLogs.push(`⚒️ GULAG: ${p.name} genera $50 en trabajos forzados desde la cárcel.`);
+                } else {
+                    // Debt / Punish
+                    p.money -= laborValue; // Go negative
+                    newEstadoMoney += laborValue;
+                    govLogs.push(`⚒️ GULAG: ${p.name} genera deuda estatal por trabajos forzados.`);
+                }
+            }
+            return p;
+        });
     }
 
-    // 3. Libertarian: Privatize Everything (Auction state assets)
+    // 5. Libertarian: Privatize
     if (newState.gov === 'libertarian') {
         const stateProps = updatedTiles.filter(t => t.owner === 'E');
         if (stateProps.length > 0) {
-            // Force an auction for a random state property
             const prop = stateProps[Math.floor(Math.random() * stateProps.length)];
-            // We can't trigger the modal directly from here cleanly without complex state return,
-            // but we can put it in the log or simply sell it to bank (privatize).
-            // Better: Sell to highest bidder automatically? 
-            // Simplified: State sells to bank (liquidation)
-            prop.owner = null; // Back to market
+            prop.owner = null; 
             newEstadoMoney += (prop.price || 0);
             govLogs.push(`🏛️ Gobierno Libertario privatiza: ${prop.name} vuelve al mercado libre.`);
         }
     }
 
-    // 4. Natural Disasters (Still active for everyone)
+    // 6. Natural Disasters
     if (Math.random() < 0.01) {
         const type = Math.random() < 0.5 ? 'Terremoto' : 'Tornado';
         let destroyed = 0;
@@ -82,60 +194,40 @@ export const handleGovernmentTick = (state: GameState): Partial<GameState> => {
         }
     }
 
-    // 5. Authoritarian Expropriation
-    if (newState.gov === 'authoritarian' && Math.random() < 0.15) {
-        const candidates = updatedTiles.filter(t => t.type === TileType.PROP && t.owner !== null && t.owner !== 'E' && (t.houses||0) === 0 && !t.hotel);
-        if (candidates.length > 0) {
-            const target = candidates[Math.floor(Math.random() * candidates.length)];
-            const victim = newState.players.find(p => p.id === target.owner);
-            if (victim) {
-                target.owner = 'E';
-                target.mortgaged = false;
-                govLogs.push(`🏚️ EXPROPIACIÓN: El Gobierno Autoritario confisca ${target.name} a ${victim.name}.`);
-            }
-        }
-    }
-
     // Gender Policies
-    if (newState.players && newState.players.length > 0) {
-        newState.players.forEach(p => {
-            if (!p.alive || p.isBot) return; 
+    if (updatedPlayers && updatedPlayers.length > 0) {
+        updatedPlayers = updatedPlayers.map(p => {
+            if (!p.alive || p.isBot) return p; 
             
             const gender = p.gender;
+            let moneyChange = 0;
             
             if (newState.gov === 'left') {
-                if (gender === 'male') {
-                    const tax = 20;
-                    if (p.money >= tax) { p.money -= tax; newEstadoMoney += tax; }
-                } else if (gender === 'female' || gender === 'marcianito') {
-                    const subsidy = 20;
-                    p.money += subsidy; newEstadoMoney -= subsidy;
-                }
+                if (gender === 'male') moneyChange = -20;
+                else if (gender === 'female' || gender === 'marcianito') moneyChange = 20;
             } else if (newState.gov === 'right') {
-                if (gender === 'female') {
-                    const tax = 20;
-                    if (p.money >= tax) { p.money -= tax; newEstadoMoney += tax; }
-                } else if (gender === 'male') {
-                    const bonus = 20;
-                    p.money += bonus; newEstadoMoney -= bonus;
-                }
+                if (gender === 'female') moneyChange = -20;
+                else if (gender === 'male') moneyChange = 20;
             } else if (newState.gov === 'authoritarian') {
-                if (gender === 'helicoptero') {
-                    const subsidy = 50;
-                    p.money += subsidy; newEstadoMoney -= subsidy;
-                } else {
-                    const tax = 10;
-                    if (p.money >= tax) { p.money -= tax; newEstadoMoney += tax; }
-                }
+                if (gender === 'helicoptero') moneyChange = 50; // Military/Attack Heli bonus
+                else moneyChange = -10; // Everyone else pays tribute
             }
+
+            if (moneyChange !== 0) {
+                if (moneyChange < 0 && p.money < Math.abs(moneyChange)) return p;
+                newEstadoMoney -= moneyChange;
+                return { ...p, money: p.money + moneyChange };
+            }
+            return p;
         });
     }
     
-    // --- ELECTIONS / CHANGE GOV ---
+    // --- ELECTIONS ---
     if (newState.govTurnsLeft <= 0) {
         if (Math.random() < 0.5) {
             return {
                 ...newState,
+                players: updatedPlayers,
                 estadoMoney: newEstadoMoney,
                 tiles: updatedTiles,
                 housesAvail: newBankHouses,
@@ -159,6 +251,7 @@ export const handleGovernmentTick = (state: GameState): Partial<GameState> => {
 
     return { 
         ...newState, 
+        players: updatedPlayers,
         estadoMoney: newEstadoMoney, 
         tiles: updatedTiles, 
         housesAvail: newBankHouses, 

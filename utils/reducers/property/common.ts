@@ -14,7 +14,7 @@ export const commonPropertyReducer = (state: GameState, action: any): GameState 
 
             const jpIdx = state.currentPlayerIndex; 
             const jPlayer = { ...state.players[jpIdx] }; 
-            const fine = getJailFine(state.gov);
+            const fine = getJailFine(state.gov, jPlayer); // Added player param
 
             if (jPlayer.money >= fine && jPlayer.jail > 0) { 
                 jPlayer.money -= fine; 

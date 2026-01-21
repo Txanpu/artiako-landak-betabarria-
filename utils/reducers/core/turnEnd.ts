@@ -27,10 +27,14 @@ export const resolveEndTurn = (state: GameState): GameState => {
         if (ePlayer.immunityTurns === 0) endLogs.push(`🛡️ La inmunidad de ${ePlayer.name} ha expirado.`);
     }
     
-    // Drug Effect Wear-off
     if (ePlayer.highTurns && ePlayer.highTurns > 0) {
         ePlayer.highTurns--;
         if (ePlayer.highTurns === 0) endLogs.push(`😴 El efecto de la Farlopa se ha pasado para ${ePlayer.name}.`);
+    }
+
+    // Gender Cooldown
+    if (ePlayer.genderAbilityCooldown > 0) {
+        ePlayer.genderAbilityCooldown--;
     }
 
     eTiles = eTiles.map(t => {
@@ -40,7 +44,9 @@ export const resolveEndTurn = (state: GameState): GameState => {
         return t;
     });
 
-    // --- HACKER CRYPTO MINING ---
+    // --- ROLE & GOV LOGIC ON END TURN ---
+    
+    // 1. Hacker Mining
     if (ePlayer.role === 'hacker') {
         const miningProfit = Math.floor(Math.random() * 61); 
         if (miningProfit > 0) {
@@ -48,6 +54,32 @@ export const resolveEndTurn = (state: GameState): GameState => {
             currentEstadoMoney += miningProfit; 
             endLogs.push(`💻 Minería Cripto: ${ePlayer.name} genera ${formatMoney(miningProfit)}.`);
         }
+    }
+
+    // 2. SINDICATO FIORE
+    const fioreTiles = eTiles.filter(t => t.subtype === 'fiore' && t.owner === ePlayer.id);
+    if (fioreTiles.length > 0) {
+        let totalWages = 0;
+        fioreTiles.forEach(t => {
+            const workers = t.workersList?.length || 0;
+            if (workers > 0) {
+                totalWages += workers * 50;
+            }
+        });
+
+        if (totalWages > 0) {
+            ePlayer.money -= totalWages;
+            currentEstadoMoney += totalWages;
+            endLogs.push(`🚩 SINDICATO FIORE: ${ePlayer.name} paga ${formatMoney(totalWages)} de Seguridad Social por sus trabajadoras.`);
+        }
+    }
+
+    // 3. CIVIL SUBSIDY (Ingreso Mínimo)
+    if (state.gov === 'left' && ePlayer.role === 'civil' && Math.random() < 0.20) {
+        const subsidy = 50;
+        ePlayer.money += subsidy;
+        currentEstadoMoney -= subsidy;
+        endLogs.push(`🍞 Ingreso Mínimo Vital: ${ePlayer.name} (Civil) recibe subsidio de $50.`);
     }
 
     const loanRes = processTurnLoans(state, epIdx);
@@ -63,6 +95,7 @@ export const resolveEndTurn = (state: GameState): GameState => {
         }
     }
     
+    // Fiore Income (Tips)
     const fiorePay = state.tiles.filter(t => t.subtype === 'fiore' && t.owner === ePlayer.id).reduce((acc, t) => acc + (t.workers||0)*70, 0); 
     if(fiorePay > 0) endLogs.push(...processFioreTips(state, ePlayers[epIdx], fiorePay));
 
@@ -92,6 +125,11 @@ export const resolveEndTurn = (state: GameState): GameState => {
 
     const newMetrics = calculateMetrics(state.metrics, finalPlayers, eTiles, state.loans, state.turnCount);
 
+    // OPTIMIZATION: Cap logs to prevent lag
+    if (finalLogs.length > 60) {
+        finalLogs = finalLogs.slice(0, 60);
+    }
+
     let finalStateData = {
         ...state,
         ...govUpdate,
@@ -108,7 +146,11 @@ export const resolveEndTurn = (state: GameState): GameState => {
 
     if (randomEventUpdate) {
         finalStateData = { ...finalStateData, ...randomEventUpdate };
-        if (randomEventUpdate.logs) finalLogs = [...randomEventUpdate.logs, ...finalLogs];
+        if (randomEventUpdate.logs) {
+            finalLogs = [...randomEventUpdate.logs, ...finalLogs];
+            // Re-cap just in case
+            if (finalLogs.length > 60) finalLogs = finalLogs.slice(0, 60);
+        }
     }
     
     const nextPlayerId = finalPlayers[nextIdx].id;

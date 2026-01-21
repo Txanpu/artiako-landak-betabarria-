@@ -36,7 +36,7 @@ export const playBlackjack = (state: GameState, player: Player): { dealer: numbe
     if (!win && !push && player.role === 'proxeneta') {
         if (canProxenetaCheat(player, 0.4)) { // 40% base chance to cheat
             win = true; // Force win
-            return { dealer, playerVal, win, push, msg: '🃏 (Habilidad Proxeneta activada)' };
+            return { dealer, playerVal, win, push, msg: '🃏 (Habilidad Proxeneta activada) ¡Ganas!' };
         }
     }
 
@@ -59,7 +59,7 @@ export const playRoulette = (state: GameState, player: Player, betColor: 'red' |
 
     // 2. Proxeneta Cheating Logic
     if (!win && player.role === 'proxeneta') {
-        const baseProb = betColor === 'green' ? 0.02 : 0.48;
+        const baseProb = betColor === 'green' ? 0.05 : 0.48; // Harder to cheat green
         if (canProxenetaCheat(player, baseProb)) {
             // Force the result to match the bet
             win = true;

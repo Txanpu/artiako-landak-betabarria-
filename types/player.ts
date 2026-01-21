@@ -29,4 +29,7 @@ export interface Player {
   // New Drug System
   farlopa: number; // Inventory count
   highTurns: number; // Turns left with 3rd die
+  
+  // New Gender Mechanics
+  genderAbilityCooldown: number; // Turns until ability can be used again
 }

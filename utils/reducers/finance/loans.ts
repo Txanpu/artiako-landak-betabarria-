@@ -5,42 +5,64 @@ import { createLoan, createLoanPool, distributePoolDividends, formatMoney, split
 export const loansReducer = (state: GameState, action: any): GameState => {
     switch (action.type) {
         case 'TAKE_LOAN': { 
-            const { amount, interest, totalRepayment, turns, lenderId } = action.payload; 
-            const lBorrowerIdx = state.currentPlayerIndex; 
-            const lBorrower = { ...state.players[lBorrowerIdx] }; 
+            const { amount, interest, totalRepayment, turns, lenderId, borrowerId } = action.payload; 
             
-            let lender = lenderId !== undefined ? lenderId : 'E';
-            if (lender !== 'E') {
-                const lenderPlayer = state.players.find(p => p.id === lender);
-                if (!lenderPlayer || lenderPlayer.money < amount) {
-                    return { ...state, logs: [`❌ Préstamo fallido: Prestamista sin fondos.`, ...state.logs] };
+            // Determine actual borrower (default to current player if not specified)
+            const actualBorrowerId = borrowerId !== undefined ? borrowerId : state.players[state.currentPlayerIndex].id;
+            const actualLenderId = lenderId !== undefined ? lenderId : 'E';
+
+            // Find indexes
+            const borrowerIdx = state.players.findIndex(p => p.id === actualBorrowerId);
+            const lenderIdx = actualLenderId === 'E' ? -1 : state.players.findIndex(p => p.id === actualLenderId);
+
+            // Validation
+            if (borrowerIdx === -1) return state;
+            if (actualLenderId !== 'E' && lenderIdx === -1) return state;
+
+            // Check Lender Funds (if not State)
+            if (actualLenderId !== 'E') {
+                const lender = state.players[lenderIdx];
+                if (lender.money < amount) {
+                    return { ...state, logs: [`❌ Préstamo fallido: ${lender.name} no tiene fondos suficientes.`, ...state.logs] };
                 }
             }
-            
+
+            // Calculations
             let finalInterestTotal: number | undefined = undefined;
             if (totalRepayment !== undefined) {
                 finalInterestTotal = Math.max(0, totalRepayment - amount);
             }
-
-            const newLoan = createLoan(lBorrower.id, amount, interest || 0, turns, finalInterestTotal);
-            if (lender !== 'E') newLoan.lenderId = lender;
-
-            lBorrower.money += amount; 
-            const lPlayers = [...state.players]; 
-            lPlayers[lBorrowerIdx] = lBorrower; 
-            
-            if (lender !== 'E') {
-                const lenderIdx = lPlayers.findIndex(p => p.id === lender);
-                if (lenderIdx !== -1) {
-                    lPlayers[lenderIdx] = { ...lPlayers[lenderIdx], money: lPlayers[lenderIdx].money - amount };
-                }
-            } else {
-                state.estadoMoney -= amount;
-            }
-
             const repayAmount = totalRepayment !== undefined ? totalRepayment : Math.round(amount * (1 + (interest/100)));
 
-            return { ...state, players: lPlayers, loans: [...state.loans, newLoan], estadoMoney: state.estadoMoney, showBankModal: false, logs: [`${lBorrower.name} pidió préstamo ${lender === 'E' ? 'al Estado' : 'P2P'}. Recibe: ${formatMoney(amount)}. Devuelve: ${formatMoney(repayAmount)}.`, ...state.logs] }; 
+            // Create Loan Object
+            const newLoan = createLoan(actualBorrowerId, amount, interest || 0, turns, finalInterestTotal);
+            if (actualLenderId !== 'E') newLoan.lenderId = actualLenderId;
+
+            // Execute Money Transfer
+            const newPlayers = [...state.players];
+            let newEstadoMoney = state.estadoMoney;
+
+            // 1. Borrower gets money
+            newPlayers[borrowerIdx] = { ...newPlayers[borrowerIdx], money: newPlayers[borrowerIdx].money + amount };
+
+            // 2. Lender loses money
+            if (actualLenderId !== 'E') {
+                newPlayers[lenderIdx] = { ...newPlayers[lenderIdx], money: newPlayers[lenderIdx].money - amount };
+            } else {
+                newEstadoMoney -= amount;
+            }
+
+            const borrowerName = newPlayers[borrowerIdx].name;
+            const lenderName = actualLenderId === 'E' ? 'el Estado' : newPlayers[lenderIdx].name;
+
+            return { 
+                ...state, 
+                players: newPlayers, 
+                loans: [...state.loans, newLoan], 
+                estadoMoney: newEstadoMoney, 
+                showBankModal: false, 
+                logs: [`💸 PRÉSTAMO: ${lenderName} presta ${formatMoney(amount)} a ${borrowerName}. Devolverá ${formatMoney(repayAmount)}.`, ...state.logs] 
+            }; 
         }
         case 'CREATE_POOL': { 
             const { loanIds, name } = action.payload; 

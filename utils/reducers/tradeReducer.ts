@@ -1,9 +1,16 @@
 
 import { GameState } from '../../types';
+import { canTrade as canTradeFn } from '../governmentRules'; 
 
 export const tradeReducer = (state: GameState, action: any): GameState => {
     switch (action.type) {
         case 'PROPOSE_TRADE': {
+            // NEW: Check Gov Rules
+            const check = canTradeFn(state.gov);
+            if (!check.allowed) {
+                return { ...state, logs: [check.reason || 'Comercio bloqueado.', ...state.logs] };
+            }
+
             const proposal = action.payload; 
             if (proposal) return { ...state, trade: proposal, showTradeModal: true };
             return { ...state, showTradeModal: true };
@@ -21,6 +28,7 @@ export const tradeReducer = (state: GameState, action: any): GameState => {
                     return { 
                         ...p, 
                         money: p.money - t.offeredMoney + t.requestedMoney,
+                        farlopa: (p.farlopa || 0) - (t.offeredFarlopa || 0) + (t.requestedFarlopa || 0),
                         props: newProps
                     };
                 }
@@ -31,6 +39,7 @@ export const tradeReducer = (state: GameState, action: any): GameState => {
                     return { 
                         ...p, 
                         money: p.money - t.requestedMoney + t.offeredMoney,
+                        farlopa: (p.farlopa || 0) - (t.requestedFarlopa || 0) + (t.offeredFarlopa || 0),
                         props: newProps
                     };
                 }
@@ -71,12 +80,22 @@ export const tradeReducer = (state: GameState, action: any): GameState => {
                     if (p.id === t.initiatorId) {
                         let newProps = p.props.filter(id => !t.offeredProps.includes(id));
                         newProps = [...newProps, ...t.requestedProps];
-                        return { ...p, money: p.money - t.offeredMoney + t.requestedMoney, props: newProps };
+                        return { 
+                            ...p, 
+                            money: p.money - t.offeredMoney + t.requestedMoney, 
+                            farlopa: (p.farlopa || 0) - (t.offeredFarlopa || 0) + (t.requestedFarlopa || 0),
+                            props: newProps 
+                        };
                     }
                     if (p.id === t.targetId) {
                         let newProps = p.props.filter(id => !t.requestedProps.includes(id));
                         newProps = [...newProps, ...t.offeredProps];
-                        return { ...p, money: p.money - t.requestedMoney + t.offeredMoney, props: newProps };
+                        return { 
+                            ...p, 
+                            money: p.money - t.requestedMoney + t.offeredMoney, 
+                            farlopa: (p.farlopa || 0) - (t.requestedFarlopa || 0) + (t.offeredFarlopa || 0),
+                            props: newProps 
+                        };
                     }
                     return p;
                  });

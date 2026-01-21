@@ -7,15 +7,23 @@ export * from './events';
 export * from './ai';
 export * from './minigames';
 export * from './initialState';
-import { GovernmentType } from '../types';
+import { GovernmentType, Player } from '../types';
 
-export const getJailFine = (gov: GovernmentType): number => {
+export const getJailFine = (gov: GovernmentType, player?: Player): number => {
+    let fine = 50;
     switch (gov) {
-        case 'authoritarian': return 150; // Punishment
-        case 'libertarian': return 100;   // Private Bail
-        case 'left': return 50;           // Standard/Subsidized
-        case 'anarchy': return 0;         // No laws
-        case 'right': return 200;         // Bribe (if stuck)
-        default: return 50;
+        case 'authoritarian': fine = 150; break;
+        case 'libertarian': fine = 100; break;
+        case 'left': fine = 50; break;
+        case 'anarchy': fine = 0; break;
+        case 'right': fine = 200; break;
+        default: fine = 50;
     }
+
+    // --- PASSIVE: MARCIANITO DOUBLE BAIL (Rule 2d) ---
+    if (player && player.gender === 'marcianito') {
+        fine *= 2;
+    }
+
+    return fine;
 };

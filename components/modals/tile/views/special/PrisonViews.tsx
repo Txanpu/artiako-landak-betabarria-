@@ -2,6 +2,7 @@
 import React from 'react';
 import { Player, GameState } from '../../../../../types';
 import { getJailFine, formatMoney } from '../../../../../utils/gameLogic';
+import { getJailRules } from '../../../../../utils/governmentRules';
 
 interface Props {
     state?: GameState;
@@ -20,14 +21,18 @@ export const GotoJailView: React.FC<Props> = ({ close }) => (
                 <p className="text-sm text-gray-400">Si caes aquí, vas directo al calabozo sin pasar por la casilla de Salida.</p>
                 <p className="text-xs text-red-400 mt-2 font-mono uppercase">"No intentes huir"</p>
             </div>
-            <button onClick={close} className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-2 rounded-full font-bold">Entendido</button>
+            <button onClick={close} className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-2 rounded-full font-bold">Entendido, Agente</button>
         </div>
     </div>
 );
 
 export const JailView: React.FC<Props> = ({ state, currentPlayer, dispatch, close }) => {
     const isInJail = currentPlayer.jail > 0;
-    const bailPrice = state ? getJailFine(state.gov) : 50;
+    
+    // Safety check if state isn't passed yet (though it should be)
+    const currentGov = state?.gov || 'left'; 
+    const jailRules = getJailRules(currentGov);
+    const bailPrice = getJailFine(currentGov, currentPlayer); // Added player for Marcianito logic
     
     return (
         <div className="bg-zinc-900 text-white w-full max-w-sm rounded-xl overflow-hidden shadow-2xl border-4 border-zinc-700 animate-in zoom-in-95 relative" onClick={e => e.stopPropagation()}>
@@ -39,18 +44,30 @@ export const JailView: React.FC<Props> = ({ state, currentPlayer, dispatch, clos
                     <div className="bg-red-900/20 p-4 rounded border border-red-500/50 w-full mb-4 backdrop-blur-sm">
                         <p className="text-red-400 font-bold mb-1 text-lg">¡ESTÁS PRESO!</p>
                         <p className="text-sm text-gray-400">Te quedan <span className="text-white font-bold text-xl mx-1">{currentPlayer.jail}</span> turnos de condena.</p>
-                        {bailPrice > 0 ? (
-                            currentPlayer.money >= bailPrice ? (
-                                <button onClick={() => { dispatch({type: 'PAY_JAIL'}); close(); }} className="mt-4 bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded shadow-lg font-bold w-full transition-all hover:scale-[1.02]">
-                                    Pagar Fianza ({formatMoney(bailPrice)})
-                                </button>
+                        
+                        {!jailRules.canBail && (
+                            <div className="mt-2 text-xs font-black text-purple-400 uppercase bg-purple-900/30 p-2 rounded border border-purple-500/50">
+                                🏛️ Gobierno Autoritario: Fianza Denegada
+                            </div>
+                        )}
+
+                        {jailRules.canBail && (
+                            bailPrice > 0 ? (
+                                currentPlayer.money >= bailPrice ? (
+                                    <button onClick={() => { dispatch({type: 'PAY_JAIL'}); close(); }} className="mt-4 bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded shadow-lg font-bold w-full transition-all hover:scale-[1.02]">
+                                        Pagar Fianza ({formatMoney(bailPrice)})
+                                    </button>
+                                ) : (
+                                    <div className="mt-4 text-xs text-red-400 font-bold">No tienes suficiente para la fianza ({formatMoney(bailPrice)}).</div>
+                                )
                             ) : (
-                                <div className="mt-4 text-xs text-red-400 font-bold">No tienes suficiente para la fianza ({formatMoney(bailPrice)}).</div>
+                                <button onClick={() => { dispatch({type: 'PAY_JAIL'}); close(); }} className="mt-4 bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded shadow-lg font-bold w-full">
+                                    ¡Amnistía! Salir Gratis
+                                </button>
                             )
-                        ) : (
-                            <button onClick={() => { dispatch({type: 'PAY_JAIL'}); close(); }} className="mt-4 bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded shadow-lg font-bold w-full">
-                                ¡Amnistía! Salir Gratis
-                            </button>
+                        )}
+                        {currentPlayer.gender === 'marcianito' && (
+                            <div className="text-[9px] text-red-300 mt-2 italic">👽 Extranjero ilegal: Fianza doble.</div>
                         )}
                     </div>
                 ) : (

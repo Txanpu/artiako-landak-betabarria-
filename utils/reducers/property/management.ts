@@ -1,11 +1,10 @@
 
 import { GameState } from '../../../types';
 import { formatMoney, getHouseCost } from '../../gameLogic';
-import { canBuild, getRepairCost } from '../../governmentRules'; // NEW
+import { canBuild, getRepairCost } from '../../governmentRules';
 
 export const manageProperty = (state: GameState, action: any): GameState => {
     
-    // NEW: REPAIR ACTION (Anarchy)
     if (action.type === 'REPAIR_PROP') {
         const { tId } = action.payload;
         const pIdx = state.currentPlayerIndex;
@@ -16,8 +15,6 @@ export const manageProperty = (state: GameState, action: any): GameState => {
             const cost = getRepairCost(tile);
             if (player.money >= cost) {
                 player.money -= cost;
-                // Money disappears in anarchy (burned) or to communal pile? Let's burn it.
-                
                 tile.isBroken = false;
                 const uTiles = [...state.tiles]; uTiles[tId] = tile;
                 const uPlayers = [...state.players]; uPlayers[pIdx] = player;
@@ -35,37 +32,45 @@ export const manageProperty = (state: GameState, action: any): GameState => {
             const player = { ...state.players[pIdx] };
             const tile = { ...state.tiles[tId] };
             
-            // --- NEW: GOV PERMISSION CHECK ---
             const permission = canBuild(state.gov, tile);
             if (!permission.allowed) {
                 return { ...state, logs: [`🚫 ${permission.reason}`, ...state.logs] };
             }
 
-            // --- FLORENTINO PERK: 20% DISCOUNT ON BUILDING ---
             const baseCost = getHouseCost(tile);
-            const discountMul = player.role === 'florentino' ? 0.8 : 1;
+            
+            // --- DISCOUNT LOGIC ---
+            let discountMul = 1;
+            
+            // Florentino Role
+            if (player.role === 'florentino') discountMul = 0.8;
+            
+            // RIGHT GOV: "Ley del Suelo" (Aggressive construction)
+            if (state.gov === 'right') {
+                discountMul = 0.5; // 50% Discount base
+                if (player.role === 'florentino') discountMul = 0.4; // Stack: 40% total cost
+            }
+
             const finalCost = Math.floor(baseCost * discountMul);
 
             const extraLogs: string[] = [];
             const newPlayers = [...state.players];
             
-            // Huelga de obras check
             if (state.blockBuildTurns > 0) {
                  return { ...state, logs: ['🚫 Huelga de obras: no se puede construir.', ...state.logs] };
             }
     
-            // Check availability logic
             let hasStock = true;
             let buildCost = finalCost;
-            if (tile.houses === 4) { // Trying to build Hotel
+            if (tile.houses === 4) { 
                 if (state.hotelsAvail <= 0) hasStock = false;
-            } else { // Trying to build House
+            } else { 
                 if (state.housesAvail <= 0) hasStock = false;
             }
 
             if (!hasStock) {
                 if (state.gov === 'right') {
-                    buildCost *= 4; // Sobrecoste por escasez
+                    buildCost *= 4; // Sobrecoste por escasez (Derecha permite construir pagando más)
                 } else {
                     return { ...state, logs: ['🚫 No hay stock de edificios en el Banco.', ...state.logs] };
                 }
@@ -75,7 +80,8 @@ export const manageProperty = (state: GameState, action: any): GameState => {
                  player.money -= buildCost;
                  state.estadoMoney += buildCost; 
                  
-                 if (player.role === 'florentino') extraLogs.push('👷 Descuento Constructora aplicado.');
+                 if (state.gov === 'right') extraLogs.push('🏗️ Ley del Suelo: 50% Descuento aplicado.');
+                 else if (player.role === 'florentino') extraLogs.push('👷 Descuento Constructora aplicado.');
 
                  // --- UTILITY CONNECTION FEE ---
                  const CONNECTION_FEE = 20;
@@ -98,12 +104,12 @@ export const manageProperty = (state: GameState, action: any): GameState => {
                  if ((tile.houses || 0) === 4) { 
                      tile.houses = 0; tile.hotel = true; 
                      if(hasStock) { state.hotelsAvail--; state.housesAvail += 4; }
-                     logMsg = `${player.name} construyó un HOTEL en ${tile.name}.`;
+                     logMsg = `${player.name} construyó un HOTEL en ${tile.name} ($${formatMoney(buildCost)}).`;
                  }
                  else { 
                      tile.houses = (tile.houses || 0) + 1; 
                      if(hasStock) state.housesAvail--;
-                     logMsg = `${player.name} construyó una casa en ${tile.name}.`;
+                     logMsg = `${player.name} construyó una casa en ${tile.name} ($${formatMoney(buildCost)}).`;
                  }
                  
                  const uTiles = [...state.tiles]; uTiles[tId] = tile;
@@ -119,7 +125,6 @@ export const manageProperty = (state: GameState, action: any): GameState => {
             const player = { ...state.players[pIdx] };
             const tile = { ...state.tiles[tId] };
             
-            // Cannot sell if broken (Anarchy)
             if (tile.isBroken) {
                 return { ...state, logs: ['🚫 No puedes vender edificios en ruinas.', ...state.logs] };
             }

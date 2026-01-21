@@ -3,7 +3,7 @@ import React from 'react';
 import { GameState, TileData, Player } from '../../../../types';
 import { COLORS } from '../../../../constants';
 import { formatMoney, getRentTable, getHouseCost, ownsFullGroup } from '../../../../utils/gameLogic';
-import { canBuild, canAuction, getRepairCost } from '../../../../utils/governmentRules'; // NEW
+import { canBuild, canAuction, getRepairCost, canBuyDirectly } from '../../../../utils/governmentRules';
 
 interface Props {
     state: GameState;
@@ -22,11 +22,11 @@ export const PropertyCard: React.FC<Props> = ({ state, dispatch, t, currentPlaye
 
     // Gov Logic
     const allowAuction = isOwnerlessProp && isAtLocation && canAuction(state.gov);
-    // Force Buy logic if auction is disabled (Authoritarian) but user has money
-    const forceBuy = isOwnerlessProp && isAtLocation && !allowAuction && currentPlayer.money >= (t.price || 0) && state.gov === 'authoritarian';
+    // Standard direct buy (Authoritarian or Anarchy)
+    const canBuyDirect = isOwnerlessProp && isAtLocation && currentPlayer && currentPlayer.money >= (t.price || 0) && canBuyDirectly(state.gov);
     
-    // Normal Buy (Authoritarian is covered by forceBuy, but check standard)
-    const canBuyDirect = isOwnerlessProp && isAtLocation && currentPlayer && currentPlayer.money >= (t.price || 0) && state.gov === 'authoritarian';
+    // Force Buy logic
+    const forceBuy = isOwnerlessProp && isAtLocation && !allowAuction && canBuyDirect;
     
     const isBlockedByGov = isOwnerlessProp && isAtLocation && state.gov === 'left';
     
@@ -36,6 +36,11 @@ export const PropertyCard: React.FC<Props> = ({ state, dispatch, t, currentPlaye
     // Broken State (Anarchy)
     const repairCost = getRepairCost(t);
     const buildPermission = canBuild(state.gov, t);
+
+    // ANARCHY: PLATA O PLOMO Logic
+    const isAnarchy = state.gov === 'anarchy';
+    const isRivalOwned = t.owner !== null && t.owner !== 'E' && t.owner !== currentPlayer.id;
+    const canPlataOPlomo = isAnarchy && isAtLocation && isRivalOwned;
 
     return (
         <div className="bg-slate-900 text-white w-full max-w-sm rounded-xl overflow-hidden shadow-2xl border border-slate-700 animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
@@ -97,6 +102,21 @@ export const PropertyCard: React.FC<Props> = ({ state, dispatch, t, currentPlaye
                                 })}
                             </tbody>
                         </table>
+                    </div>
+                )}
+
+                {/* PLATA O PLOMO BUTTON */}
+                {canPlataOPlomo && !t.isBroken && (
+                    <div className="col-span-2 mt-2">
+                        <button 
+                            onClick={() => dispatch({type: 'PLATA_O_PLOMO', payload: {tId: t.id}})}
+                            className="w-full bg-black hover:bg-gray-900 text-red-500 font-black py-4 rounded-lg shadow-[0_0_20px_rgba(220,38,38,0.5)] border-2 border-red-600 active:scale-95 transition-all text-xl uppercase tracking-widest flex items-center justify-center gap-2 group animate-pulse"
+                        >
+                            <span>💀 PLATA O PLOMO</span>
+                        </button>
+                        <div className="text-[9px] text-gray-500 text-center mt-1">
+                            50% Éxito: No pagas + Dañas rival | 50% Fallo: Pagas doble + Hospital
+                        </div>
                     </div>
                 )}
 

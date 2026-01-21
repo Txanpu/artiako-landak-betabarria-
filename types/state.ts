@@ -104,6 +104,7 @@ export interface GameState {
   showDarkWeb: boolean;
   showGovGuide: boolean; 
   showWeatherModal: boolean; // NEW: Forecast UI Toggle
+  showFbiModal: boolean; // NEW: FBI Investigation UI
   
   // Metrics History for Sparklines
   metrics: Record<number, { turn: number, money: number, netWorth: number }[]>;

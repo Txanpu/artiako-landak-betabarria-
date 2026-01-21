@@ -20,12 +20,23 @@ export const marketReducer = (state: GameState, action: any): GameState => {
             const { amount } = action.payload;
             const pIdx = state.currentPlayerIndex;
             const p = { ...state.players[pIdx] };
+            
             if ((p.offshoreMoney || 0) >= amount) {
                 p.offshoreMoney = (p.offshoreMoney || 0) - amount;
-                const net = Math.floor(amount * 0.9); // 10% fee
+                
+                // RIGHT GOV: 0% Fee (Amnistía Fiscal)
+                const isTaxHaven = state.gov === 'right';
+                const fee = isTaxHaven ? 0 : 0.10;
+                const net = Math.floor(amount * (1 - fee));
+                
                 p.money += net;
                 const ps = [...state.players]; ps[pIdx] = p;
-                return { ...state, players: ps, logs: [`🏝️ ${p.name} retira fondos offshore (+${formatMoney(net)} tras blanqueo).`, ...state.logs] };
+                
+                const logMsg = isTaxHaven 
+                    ? `🏝️ ${p.name} retira fondos offshore (Amnistía Fiscal 0% coms).`
+                    : `🏝️ ${p.name} retira fondos offshore (+${formatMoney(net)} tras blanqueo).`;
+
+                return { ...state, players: ps, logs: [logMsg, ...state.logs] };
             }
             return state;
         }
@@ -55,76 +66,83 @@ export const marketReducer = (state: GameState, action: any): GameState => {
         }
         
         case 'CREATE_OPTION_CONTRACT': {
-            const { type, propId, strike, premium, counterpartyId } = action.payload;
-            const currentPlayer = state.players[state.currentPlayerIndex];
-            const counterparty = state.players.find(p => p.id === counterpartyId);
+            const { mode, propId, strike, premium, counterpartyId } = action.payload;
+            const me = state.players[state.currentPlayerIndex];
+            const other = state.players.find(p => p.id === counterpartyId);
+            const tile = state.tiles[propId];
             
-            if (!counterparty) return state;
+            if (!other || !tile) return state;
 
-            // Scenario 1: CALL (I sell Call to Counterparty)
-            if (type === 'call') {
-                const tile = state.tiles[propId];
-                if (tile.owner !== currentPlayer.id) return { ...state, logs: ['❌ No posees la propiedad para emitir una Call.', ...state.logs] };
-                if (counterparty.money < premium) return { ...state, logs: ['❌ El comprador no tiene fondos para la prima.', ...state.logs] };
+            let logMsg = '';
+            let writerId = -1;
+            let holderId = -1;
+            let type: 'call' | 'put' = 'call';
+            
+            // Logic Container for validation and money transfer
+            const executeDeal = (payer: typeof me, receiver: typeof me, wId: number, hId: number, optType: 'call' | 'put', propOwnerId: number) => {
+                // 1. Check Ownership
+                if (tile.owner !== propOwnerId) return { success: false, msg: `❌ La propiedad no pertenece al emisor correcto.` };
+                // 2. Check Funds
+                if (payer.money < premium) return { success: false, msg: `❌ ${payer.name} no tiene fondos para la prima.` };
 
-                // Money Transfer
+                // 3. Transfer Money
                 const newPlayers = state.players.map(p => {
-                    if (p.id === currentPlayer.id) return { ...p, money: p.money + premium };
-                    if (p.id === counterparty.id) return { ...p, money: p.money - premium };
+                    if (p.id === payer.id) return { ...p, money: p.money - premium };
+                    if (p.id === receiver.id) return { ...p, money: p.money + premium };
                     return p;
                 });
 
-                const option = {
-                    id: Math.random().toString(36).substr(2, 9),
-                    type: 'call' as const,
-                    propertyId: propId,
-                    strikePrice: strike,
-                    premium,
-                    writerId: currentPlayer.id, 
-                    holderId: counterparty.id, 
-                    expiresTurn: state.turnCount + 15
-                };
+                writerId = wId;
+                holderId = hId;
+                type = optType;
+                
+                return { success: true, newPlayers };
+            };
 
-                return {
-                    ...state,
-                    players: newPlayers,
-                    financialOptions: [...state.financialOptions, option],
-                    logs: [`📝 CALL Creada: ${counterparty.name} paga $${premium} a ${currentPlayer.name} por derecho a comprar #${tile.name} a $${strike}.`, ...state.logs]
-                };
+            let res: any;
+
+            if (mode === 'sell_call') {
+                // I sell Call. I get Premium. I am Writer. I own Prop.
+                res = executeDeal(other, me, me.id, other.id, 'call', me.id);
+                logMsg = `📝 CALL Creada: ${me.name} vende opción de compra a ${other.name} sobre #${tile.name}. Prima: $${premium}.`;
+            } 
+            else if (mode === 'buy_call') {
+                // I buy Call. I pay Premium. Other is Writer. Other owns Prop.
+                res = executeDeal(me, other, other.id, me.id, 'call', other.id);
+                logMsg = `📝 CALL Creada: ${me.name} compra derecho a comprar #${tile.name} a ${other.name}. Prima: $${premium}.`;
+            }
+            else if (mode === 'buy_put') {
+                // I buy Put. I pay Premium. Other is Writer (Insurer). I own Prop.
+                res = executeDeal(me, other, other.id, me.id, 'put', me.id);
+                logMsg = `📝 PUT Creada: ${me.name} compra seguro de venta a ${other.name} sobre #${tile.name}. Prima: $${premium}.`;
+            }
+            else if (mode === 'sell_put') {
+                // I sell Put (Insurer). I get Premium. I am Writer. Other owns Prop.
+                res = executeDeal(other, me, me.id, other.id, 'put', other.id);
+                logMsg = `📝 PUT Creada: ${me.name} asegura la propiedad #${tile.name} de ${other.name}. Prima: $${premium}.`;
             }
 
-            // Scenario 2: PUT (I buy Put from Counterparty)
-            if (type === 'put') {
-                const tile = state.tiles[propId];
-                if (tile.owner !== currentPlayer.id) return { ...state, logs: ['❌ Debes poseer la propiedad para comprar protección (Put).', ...state.logs] };
-                if (currentPlayer.money < premium) return { ...state, logs: ['❌ No tienes fondos para pagar la prima.', ...state.logs] };
-
-                // Money Transfer
-                const newPlayers = state.players.map(p => {
-                    if (p.id === currentPlayer.id) return { ...p, money: p.money - premium };
-                    if (p.id === counterparty.id) return { ...p, money: p.money + premium };
-                    return p;
-                });
-
-                const option = {
-                    id: Math.random().toString(36).substr(2, 9),
-                    type: 'put' as const,
-                    propertyId: propId,
-                    strikePrice: strike,
-                    premium,
-                    writerId: counterparty.id, 
-                    holderId: currentPlayer.id,
-                    expiresTurn: state.turnCount + 15
-                };
-
-                return {
-                    ...state,
-                    players: newPlayers,
-                    financialOptions: [...state.financialOptions, option],
-                    logs: [`📝 PUT Creada: ${currentPlayer.name} paga $${premium} a ${counterparty.name} por derecho a vender #${tile.name} a $${strike}.`, ...state.logs]
-                };
+            if (!res || !res.success) {
+                return { ...state, logs: [res?.msg || 'Error en contrato', ...state.logs] };
             }
-            return state;
+
+            const option = {
+                id: Math.random().toString(36).substr(2, 9),
+                type,
+                propertyId: propId,
+                strikePrice: strike,
+                premium,
+                writerId,
+                holderId,
+                expiresTurn: state.turnCount + 15
+            };
+
+            return {
+                ...state,
+                players: res.newPlayers,
+                financialOptions: [...state.financialOptions, option],
+                logs: [logMsg, ...state.logs]
+            };
         }
 
         case 'EXERCISE_OPTION': {
@@ -172,6 +190,9 @@ export const marketReducer = (state: GameState, action: any): GameState => {
                 if (tile.owner !== holder.id) {
                     return { ...state, financialOptions: state.financialOptions.filter(o => o.id !== optId), logs: [`❌ PUT Fallida: Ya no posees la propiedad.`, ...state.logs] };
                 }
+                
+                // Writer (Insurer) pays Holder
+                // Even if Writer has no money, debt is enforced (negative balance -> bankruptcy check later)
                 
                 newPlayers = newPlayers.map(p => {
                     if (p.id === holder.id) return { ...p, money: p.money + opt.strikePrice, props: p.props.filter(tid => tid !== tile.id) };

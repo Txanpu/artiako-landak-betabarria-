@@ -74,7 +74,9 @@ export interface TradeOffer {
     targetId: number;
     offeredMoney: number;
     offeredProps: number[]; 
+    offeredFarlopa?: number; // NEW
     requestedMoney: number;
     requestedProps: number[]; 
+    requestedFarlopa?: number; // NEW
     isOpen: boolean;
 }

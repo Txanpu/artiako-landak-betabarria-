@@ -5,6 +5,10 @@ import { formatMoney, initGreyhounds } from '../../gameLogic';
 export const greyhoundReducer = (state: GameState, action: any): GameState => {
     switch (action.type) {
         case 'START_GREYHOUNDS': {
+            if (state.gov === 'left') {
+                return { ...state, logs: ['🚫 Carreras prohibidas por derechos de los animales.', ...state.logs] };
+            }
+
             return {
                 ...state,
                 showGreyhounds: true,

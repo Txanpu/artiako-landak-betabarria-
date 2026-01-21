@@ -4,12 +4,32 @@ import { trackTileLanding, handleRoleAbilities, drawEvent, checkOkupaOccupation,
 import { getAvailableTransportHops } from '../board';
 import { FIESTA_TILES } from '../../constants';
 import { getRandomWorker } from '../../../data/fioreData';
+import { getJailRules } from '../governmentRules';
 
 export const handleLandingLogic = (state: GameState): GameState => {
     let pIdx = state.currentPlayerIndex;
     let player = { ...state.players[pIdx] };
     let newPos = player.pos;
     const tile = state.tiles[newPos];
+    let newPlayers = [...state.players];
+    let roleLogs: string[] = [];
+
+    // --- ANARCHY: THE PURGE (Steal from players on same tile) ---
+    if (state.gov === 'anarchy') {
+        const victims = newPlayers.filter(p => p.id !== player.id && p.pos === newPos && p.alive);
+        if (victims.length > 0) {
+            let stoleTotal = 0;
+            victims.forEach(v => {
+                const steal = Math.min(v.money, 100);
+                if (steal > 0) {
+                    newPlayers[v.id] = { ...v, money: v.money - steal };
+                    stoleTotal += steal;
+                    roleLogs.push(`⚔️ PURGA: ¡${player.name} asalta a ${v.name} y le roba ${formatMoney(steal)}!`);
+                }
+            });
+            player.money += stoleTotal;
+        }
+    }
 
     // --- NEW V22: ROLE CHECKS ---
     // 1. Okupa Occupation check (Steal 'E' prop)
@@ -34,7 +54,9 @@ export const handleLandingLogic = (state: GameState): GameState => {
     }
 
     const newHeatmap = trackTileLanding(state, newPos);
-    const roleLogs = handleRoleAbilities(state, player, tile);
+    const abilityLogs = handleRoleAbilities(state, player, tile);
+    roleLogs = [...roleLogs, ...abilityLogs];
+    
     if (okupaMsg) roleLogs.push(okupaMsg);
     if (fentMsg) roleLogs.push(fentMsg);
     
@@ -82,7 +104,6 @@ export const handleLandingLogic = (state: GameState): GameState => {
         if (destTile) {
             // Recursive Landing call for the new destination
             player.pos = destTile.id;
-            const newPlayers = [...state.players];
             newPlayers[pIdx] = player;
             
             return handleLandingLogic({
@@ -111,8 +132,6 @@ export const handleLandingLogic = (state: GameState): GameState => {
         transportOptions = getAvailableTransportHops(state.tiles, player, newPos);
     }
 
-    const newPlayers = [...state.players];
-    
     // --- IMPUESTOS (TAX LOGIC) ---
     // Calculates tax based on current Gov Config and deducts from player
     let taxLog = null;
@@ -120,27 +139,33 @@ export const handleLandingLogic = (state: GameState): GameState => {
     let newFbiPot = state.fbiPot;
 
     if (tile.type === TileType.TAX) {
-        const taxRate = state.currentGovConfig.tax;
         
-        // If tax rate is negative (Right wing/Libertarian), it implies 0 tax on this tile (or subsidy, but let's keep it 0 for "Tax" tile)
-        if (taxRate > 0) {
-            const taxAmount = Math.floor(player.money * taxRate);
-            if (taxAmount > 0) {
-                player.money -= taxAmount;
-                
-                // Split Tax: 50% State, 50% FBI Pot (Corruption)
-                const toState = Math.floor(taxAmount * 0.5);
-                const toPot = taxAmount - toState;
-                
-                newEstadoMoney += toState;
-                newFbiPot += toPot;
-                
-                taxLog = `💸 IMPUESTOS (${(taxRate*100).toFixed(0)}%): ${player.name} paga ${formatMoney(taxAmount)}.`;
-            } else {
-                taxLog = `💸 IMPUESTOS: ${player.name} no tiene ingresos declarables.`;
-            }
+        // --- PASSIVE: MARCIANITO TAX EVASION (Rule 2d) ---
+        if (player.gender === 'marcianito') {
+            taxLog = `👽 Marcianito: Hacienda no tiene tus datos (Sin papeles). Evades impuestos.`;
         } else {
-            taxLog = `💸 IMPUESTOS: Exención fiscal por Gobierno actual (0%).`;
+            const taxRate = state.currentGovConfig.tax;
+            
+            // If tax rate is negative (Right wing/Libertarian), it implies 0 tax on this tile (or subsidy, but let's keep it 0 for "Tax" tile)
+            if (taxRate > 0) {
+                const taxAmount = Math.floor(player.money * taxRate);
+                if (taxAmount > 0) {
+                    player.money -= taxAmount;
+                    
+                    // Split Tax: 50% State, 50% FBI Pot (Corruption)
+                    const toState = Math.floor(taxAmount * 0.5);
+                    const toPot = taxAmount - toState;
+                    
+                    newEstadoMoney += toState;
+                    newFbiPot += toPot;
+                    
+                    taxLog = `💸 IMPUESTOS (${(taxRate*100).toFixed(0)}%): ${player.name} paga ${formatMoney(taxAmount)}.`;
+                } else {
+                    taxLog = `💸 IMPUESTOS: ${player.name} no tiene ingresos declarables.`;
+                }
+            } else {
+                taxLog = `💸 IMPUESTOS: Exención fiscal por Gobierno actual (0%).`;
+            }
         }
     }
 
@@ -175,16 +200,18 @@ export const handleLandingLogic = (state: GameState): GameState => {
 
     // Go To Jail Tile
     if (tile.type === TileType.GOTOJAIL) {
-        if (state.gov === 'right') {
-            // RIGHT GOV: NO JAIL
-            finalState.logs.push('⚖️ Gobierno de Derechas: La seguridad privada te deja ir. No entras en la cárcel.');
+        const jailRules = getJailRules(state.gov);
+        
+        if (jailRules.immune) {
+            // RIGHT or ANARCHY GOV: NO JAIL
+            finalState.logs.push(`⚖️ Gobierno ${state.gov.toUpperCase()}: Inmunidad aplicada. No entras en la cárcel.`);
             finalState.rolled = true;
         } else {
             // Find actual Jail Tile ID
             const jailTile = state.tiles.find(t => t.type === TileType.JAIL);
-            const jailPos = jailTile ? jailTile.id : 10; // Fallback to 10 if not found
+            const jailPos = jailTile ? jailTile.id : 10; 
 
-            player.jail = 3;
+            player.jail = jailRules.duration; // Use gov duration rule
             player.pos = jailPos;
             player.doubleStreak = 0;
             finalState.logs.push('👮 ¡A la cárcel!');

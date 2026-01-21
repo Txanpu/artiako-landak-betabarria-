@@ -2,6 +2,7 @@
 import React from 'react';
 import { GameState, TileData, Player } from '../../../../../types';
 import { formatMoney, getRent } from '../../../../../utils/gameLogic';
+import { canAuction, canBuyDirectly } from '../../../../../utils/governmentRules';
 
 interface Props {
     state: GameState;
@@ -23,10 +24,8 @@ export const GymEntryView: React.FC<Props> = ({ state, dispatch, t, currentPlaye
         ? state.players.find(p => p.id === t.owner)?.name 
         : 'Estado';
 
-    // If I own it, or it's free, show standard management or buy options via this view?
-    // Since we redirected to SpecialTileModal, we handle simple buy logic here too.
-    const canBuy = t.owner === null && currentPlayer.money >= (t.price || 0) && state.gov === 'authoritarian';
-    const canAuction = t.owner === null && ['right', 'libertarian', 'anarchy'].includes(state.gov);
+    const canBuy = t.owner === null && currentPlayer.money >= (t.price || 0) && canBuyDirectly(state.gov);
+    const allowAuction = t.owner === null && canAuction(state.gov);
 
     return (
         <div className="bg-[#2e2e2e] text-white w-full max-w-sm rounded-lg overflow-hidden shadow-2xl border-4 border-slate-700 animate-in zoom-in-95 relative" onClick={e => e.stopPropagation()}>
@@ -52,8 +51,8 @@ export const GymEntryView: React.FC<Props> = ({ state, dispatch, t, currentPlaye
                     <div className="space-y-3">
                         <div className="text-sm text-gray-300 mb-2">Este gimnasio está buscando un nuevo líder.</div>
                         {canBuy && <button onClick={() => { dispatch({type: 'BUY_PROP'}); close(); }} className="w-full bg-blue-600 hover:bg-blue-500 py-3 rounded font-bold shadow-lg">Comprar Licencia ({formatMoney(t.price||0)})</button>}
-                        {canAuction && <button onClick={() => { dispatch({type: 'START_AUCTION', payload: t.id}); close(); }} className="w-full bg-purple-600 hover:bg-purple-500 py-3 rounded font-bold shadow-lg">Subastar Licencia</button>}
-                        <div className="text-xs text-gray-500">Solo Gobiernos Autoritarios permiten compra directa.</div>
+                        {allowAuction && <button onClick={() => { dispatch({type: 'START_AUCTION', payload: t.id}); close(); }} className="w-full bg-purple-600 hover:bg-purple-500 py-3 rounded font-bold shadow-lg">Subastar Licencia</button>}
+                        <div className="text-xs text-gray-500">Solo Gobiernos Autoritarios o Anarquistas permiten compra directa.</div>
                     </div>
                 ) : isAtLocation ? (
                     // RIVAL CHALLENGE

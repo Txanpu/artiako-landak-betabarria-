@@ -3,7 +3,7 @@ import { GameState } from '../../../types';
 import { getBoardNeighbors } from '../../board';
 import { handleLandingLogic } from '../../movement/landingLogic';
 import { shouldBlockWelfare, shouldBlockSalary } from '../../roles';
-import { calculateGoSalary } from '../../governmentRules'; // NEW IMPORT
+import { calculateGoSalary } from '../../governmentRules';
 import { formatMoney } from '../../gameLogic';
 
 export const navigationReducer = (state: GameState, action: any): GameState => {
@@ -29,11 +29,27 @@ export const navigationReducer = (state: GameState, action: any): GameState => {
     
             if (neighbors.length === 1) {
                 const nextPos = neighbors[0];
-                const p = { ...player, pos: nextPos };
                 const newPs = [...state.players];
-                
                 let newMoney = state.estadoMoney;
                 let logs = [...state.logs];
+                let p = { ...player, pos: nextPos };
+
+                // --- LIBERTARIAN ROAD TOLL (Peaje) ---
+                if (state.gov === 'libertarian') {
+                    const tile = state.tiles[nextPos];
+                    // Pay toll if property owned by rival
+                    if (tile.owner && typeof tile.owner === 'number' && tile.owner !== p.id) {
+                        const TOLL = 5;
+                        if (p.money >= TOLL) {
+                            p.money -= TOLL;
+                            const ownerIdx = newPs.findIndex(pl => pl.id === tile.owner);
+                            if (ownerIdx !== -1) {
+                                newPs[ownerIdx] = { ...newPs[ownerIdx], money: newPs[ownerIdx].money + TOLL };
+                                // Don't log every step to avoid spam, but money transfers
+                            }
+                        }
+                    }
+                }
 
                 // --- PASSING START LOGIC ---
                 if (nextPos === 0) {
@@ -83,7 +99,7 @@ export const navigationReducer = (state: GameState, action: any): GameState => {
                             const tax = transportCount * 10;
                             if (newMoney >= tax) {
                                 newMoney -= tax;
-                                const updatedOwner = (idx === pIdx) ? p : { ...newPs[idx] };
+                                const updatedOwner = (idx === pIdx) ? p : { ...newPs[idx] }; // Use p if it's current player
                                 updatedOwner.money += tax;
                                 newPs[idx] = updatedOwner;
                                 logs = [`✈️ Aduanas: ${owner.name} recibe ${formatMoney(tax)} por sus ${transportCount} transportes.`, ...logs];

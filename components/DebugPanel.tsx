@@ -1,7 +1,9 @@
 
 import React, { useState } from 'react';
-import { GameState, TileType } from '../types';
+import { GameState } from '../types';
 import { EVENTS_DECK } from '../utils/gameLogic';
+import { DebugProperties } from './debug/DebugProperties';
+import { DebugPlayers } from './debug/DebugPlayers';
 
 interface DebugPanelProps {
     state: GameState;
@@ -10,7 +12,7 @@ interface DebugPanelProps {
 
 export const DebugPanel: React.FC<DebugPanelProps> = ({ state, dispatch }) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [activeTab, setActiveTab] = useState<'status' | 'actions' | 'roles' | 'events' | 'export'>('status');
+    const [activeTab, setActiveTab] = useState<'status' | 'players' | 'props' | 'events' | 'export'>('status');
 
     if (!state.gameStarted) return null;
 
@@ -21,119 +23,90 @@ export const DebugPanel: React.FC<DebugPanelProps> = ({ state, dispatch }) => {
         alert('Estado copiado al portapapeles');
     };
 
-    // Helper to find Fiore & Slots
-    const fioreId = state.tiles.find(t => t.subtype === 'fiore')?.id;
-    const slotsId = state.tiles.find(t => t.type === TileType.SLOTS)?.id;
-
     return (
         <>
             {/* Toggle Button */}
             <button 
                 onClick={() => setIsOpen(!isOpen)}
-                className={`fixed bottom-4 right-4 z-50 p-2 rounded-full shadow-lg border transition-all ${isOpen ? 'bg-yellow-500 border-yellow-300 text-black rotate-90' : 'bg-slate-800 border-slate-600 text-gray-400 hover:text-white'}`}
+                className={`fixed bottom-4 right-4 z-[999] p-3 rounded-full shadow-2xl border-2 transition-all ${isOpen ? 'bg-red-600 border-red-400 text-white rotate-90 scale-110' : 'bg-slate-900 border-slate-600 text-gray-400 hover:text-white hover:scale-105'}`}
+                title="Modo Dios / Debug"
             >
                 🐞
             </button>
 
             {/* Panel */}
             {isOpen && (
-                <div className="fixed bottom-16 right-4 z-50 w-80 bg-white text-slate-900 rounded-lg shadow-2xl border border-slate-300 overflow-hidden text-xs font-mono">
-                    <div className="flex bg-slate-100 border-b border-slate-200">
-                        {['status', 'actions', 'roles', 'events', 'export'].map((tab) => (
+                <div className="fixed bottom-20 right-4 z-[999] w-96 bg-white text-slate-900 rounded-xl shadow-2xl border border-slate-400 overflow-hidden text-xs font-sans flex flex-col max-h-[80vh] animate-in slide-in-from-bottom-10 fade-in duration-200">
+                    
+                    {/* Header Tabs */}
+                    <div className="flex bg-slate-100 border-b border-slate-200 overflow-x-auto">
+                        {[
+                            {id: 'status', label: 'Estado'},
+                            {id: 'players', label: 'Jugadores'},
+                            {id: 'props', label: 'Propiedades'},
+                            {id: 'events', label: 'Eventos'},
+                            {id: 'export', label: 'Data'}
+                        ].map((tab) => (
                             <button 
-                                key={tab}
-                                onClick={() => setActiveTab(tab as any)}
-                                className={`flex-1 py-2 capitalize ${activeTab === tab ? 'bg-white font-bold text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:bg-slate-50'}`}
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id as any)}
+                                className={`flex-1 py-3 px-2 font-bold text-[10px] uppercase tracking-wider transition-colors ${activeTab === tab.id ? 'bg-white text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:bg-slate-200'}`}
                             >
-                                {tab}
+                                {tab.label}
                             </button>
                         ))}
                     </div>
 
-                    <div className="p-3 max-h-96 overflow-y-auto">
+                    <div className="p-4 overflow-y-auto flex-1 bg-white">
                         
+                        {/* 1. STATUS & GENERAL ACTIONS */}
                         {activeTab === 'status' && (
-                            <div className="space-y-1">
-                                <div className="flex justify-between"><span className="text-slate-500">Turno:</span> <b>{state.turnCount}</b></div>
-                                <div className="flex justify-between"><span className="text-slate-500">Jugador:</span> <b>{currentPlayer.name}</b></div>
-                                <div className="flex justify-between"><span className="text-slate-500">Rolled:</span> <b>{state.rolled ? 'YES' : 'NO'}</b></div>
-                                <div className="flex justify-between"><span className="text-slate-500">Gobierno:</span> <b className="uppercase">{state.gov}</b></div>
-                                <div className="flex justify-between"><span className="text-slate-500">Estado Money:</span> <b>${state.estadoMoney}</b></div>
-                                <div className="flex justify-between"><span className="text-slate-500">Loans:</span> <b>{state.loans.length}</b></div>
-                            </div>
-                        )}
-
-                        {activeTab === 'actions' && (
-                            <div className="grid grid-cols-2 gap-2">
-                                <button onClick={() => dispatch({type: 'END_TURN'})} className="bg-slate-200 hover:bg-slate-300 p-2 rounded">Force End Turn</button>
-                                <button onClick={() => dispatch({type: 'ROLL_DICE'})} className="bg-slate-200 hover:bg-slate-300 p-2 rounded">Force Roll</button>
-                                <button onClick={() => dispatch({type: 'DEBUG_ADD_MONEY', payload: {pId: state.currentPlayerIndex, amount: 1000}})} className="bg-green-100 hover:bg-green-200 text-green-800 p-2 rounded">+1000$ (Self)</button>
-                                
-                                {fioreId && (
-                                    <button onClick={() => dispatch({type: 'DEBUG_TELEPORT', payload: {pId: state.currentPlayerIndex, pos: fioreId}})} className="bg-purple-100 text-purple-800 p-2 rounded">TP to Fiore</button>
-                                )}
-                                {slotsId && (
-                                    <button onClick={() => dispatch({type: 'DEBUG_TELEPORT', payload: {pId: state.currentPlayerIndex, pos: slotsId}})} className="bg-yellow-100 text-yellow-800 p-2 rounded">TP to Slots</button>
-                                )}
-
-                                <div className="col-span-2 mt-2 pt-2 border-t border-slate-200">
-                                    <label className="block mb-1 text-slate-500">Teleport Current Player</label>
-                                    <select 
-                                        className="w-full p-1 border rounded"
-                                        onChange={(e) => dispatch({type: 'DEBUG_TELEPORT', payload: {pId: state.currentPlayerIndex, pos: parseInt(e.target.value)}})}
-                                        value={currentPlayer.pos}
-                                    >
-                                        {state.tiles.map(t => (
-                                            <option key={t.id} value={t.id}>#{t.id} {t.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-                        )}
-
-                        {activeTab === 'roles' && (
-                            <div className="space-y-2">
-                                {state.players.map((p, idx) => (
-                                    <div key={p.id} className="flex items-center justify-between">
-                                        <span>{p.name}</span>
+                            <div className="space-y-4">
+                                <div className="bg-slate-50 p-2 rounded border border-slate-200 grid grid-cols-2 gap-2">
+                                    <div><span className="text-gray-500">Turno:</span> <b>{state.turnCount}</b></div>
+                                    <div><span className="text-gray-500">Jugador:</span> <b>{currentPlayer.name}</b></div>
+                                    <div><span className="text-gray-500">Rolled:</span> <b>{state.rolled ? 'SI' : 'NO'}</b></div>
+                                    <div><span className="text-gray-500">Arcas:</span> <b>${state.estadoMoney}</b></div>
+                                    <div className="col-span-2">
+                                        <span className="text-gray-500">Gobierno:</span>
                                         <select 
-                                            value={p.role || 'civil'}
-                                            onChange={(e) => dispatch({type: 'DEBUG_SET_ROLE', payload: {pId: idx, role: e.target.value}})}
-                                            className="ml-2 p-1 border rounded text-[10px]"
+                                            value={state.gov}
+                                            onChange={(e) => dispatch({type: 'DEBUG_SET_GOV', payload: e.target.value})}
+                                            className="ml-2 border rounded p-1 text-[10px] uppercase font-bold"
                                         >
-                                            <option value="civil">Civil</option>
-                                            <option value="proxeneta">Proxeneta</option>
-                                            <option value="florentino">Florentino</option>
-                                            <option value="fbi">FBI</option>
-                                            <option value="okupa">Okupa</option>
-                                            <option value="hacker">Hacker</option>
+                                            <option value="left">Izquierda</option>
+                                            <option value="right">Derecha</option>
+                                            <option value="authoritarian">Autoritario</option>
+                                            <option value="libertarian">Libertario</option>
+                                            <option value="anarchy">Anarquía</option>
                                         </select>
                                     </div>
-                                ))}
-                                <div className="pt-2 border-t mt-2">
-                                    <label className="block text-slate-500 mb-1">Set Government</label>
-                                    <select 
-                                        value={state.gov}
-                                        onChange={(e) => dispatch({type: 'DEBUG_SET_GOV', payload: e.target.value})}
-                                        className="w-full p-1 border rounded"
-                                    >
-                                        <option value="left">Left</option>
-                                        <option value="right">Right</option>
-                                        <option value="authoritarian">Authoritarian</option>
-                                        <option value="libertarian">Libertarian</option>
-                                        <option value="anarchy">Anarchy</option>
-                                    </select>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button onClick={() => dispatch({type: 'ROLL_DICE'})} className="bg-blue-100 hover:bg-blue-200 text-blue-800 p-2 rounded font-bold">Forzar Dados</button>
+                                    <button onClick={() => dispatch({type: 'END_TURN'})} className="bg-red-100 hover:bg-red-200 text-red-800 p-2 rounded font-bold">Pasar Turno</button>
+                                    <button onClick={() => dispatch({type: 'TOGGLE_HEATMAP'})} className="bg-orange-100 hover:bg-orange-200 text-orange-800 p-2 rounded">Mapa Calor</button>
+                                    <button onClick={() => dispatch({type: 'TOGGLE_WEATHER_MODAL'})} className="bg-cyan-100 hover:bg-cyan-200 text-cyan-800 p-2 rounded">Weather UI</button>
                                 </div>
                             </div>
                         )}
 
+                        {/* 2. PLAYERS & INVENTORY */}
+                        {activeTab === 'players' && <DebugPlayers state={state} dispatch={dispatch} />}
+
+                        {/* 3. PROPERTIES & BUILDINGS */}
+                        {activeTab === 'props' && <DebugProperties state={state} dispatch={dispatch} />}
+
+                        {/* 4. EVENTS TRIGGER */}
                         {activeTab === 'events' && (
                             <div className="space-y-1">
+                                <p className="text-gray-400 text-[10px] uppercase font-bold mb-2">Forzar Evento en el próximo robo de carta</p>
                                 {EVENTS_DECK.map(evt => (
                                     <button 
                                         key={evt.id}
-                                        onClick={() => dispatch({type: 'DEBUG_TRIGGER_EVENT', payload: evt.id})}
-                                        className="w-full text-left p-2 hover:bg-purple-50 rounded border border-transparent hover:border-purple-200 truncate"
+                                        onClick={() => { dispatch({type: 'DEBUG_TRIGGER_EVENT', payload: evt.id}); alert(`Evento ${evt.title} fijado.`); }}
+                                        className={`w-full text-left p-2 rounded border border-transparent text-xs truncate transition-colors ${state.nextEventId === evt.id ? 'bg-purple-100 border-purple-500 text-purple-900 font-bold' : 'hover:bg-slate-50 hover:border-slate-300'}`}
                                     >
                                         ⚡ {evt.title}
                                     </button>
@@ -141,14 +114,14 @@ export const DebugPanel: React.FC<DebugPanelProps> = ({ state, dispatch }) => {
                             </div>
                         )}
 
+                        {/* 5. DATA EXPORT */}
                         {activeTab === 'export' && (
                             <div className="space-y-2">
-                                <button onClick={copyState} className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-500 font-bold">
-                                    📋 Copiar Estado al Portapapeles
+                                <button onClick={copyState} className="w-full bg-slate-800 text-white p-3 rounded hover:bg-slate-700 font-bold shadow-lg">
+                                    📋 Copiar JSON del Estado
                                 </button>
-                                
-                                <div className="text-[10px] text-gray-500">Últimos Logs:</div>
-                                <textarea readOnly className="w-full h-40 bg-slate-100 border p-1 text-[9px]" value={state.logs.slice(0, 50).join('\n')} />
+                                <div className="text-[10px] text-gray-500 font-bold uppercase mt-4">Log del Sistema:</div>
+                                <textarea readOnly className="w-full h-40 bg-slate-100 border p-2 text-[10px] font-mono rounded resize-none focus:outline-none" value={state.logs.slice(0, 50).join('\n')} />
                             </div>
                         )}
 

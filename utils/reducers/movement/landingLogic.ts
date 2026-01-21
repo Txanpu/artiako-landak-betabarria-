@@ -4,6 +4,7 @@ import { trackTileLanding, handleRoleAbilities, drawEvent, checkOkupaOccupation,
 import { getAvailableTransportHops } from '../board';
 import { FIESTA_TILES } from '../../constants';
 import { getRandomWorker } from '../../../data/fioreData';
+import { getJailRules } from '../../governmentRules';
 
 export const handleLandingLogic = (state: GameState): GameState => {
     let pIdx = state.currentPlayerIndex;
@@ -175,16 +176,18 @@ export const handleLandingLogic = (state: GameState): GameState => {
 
     // Go To Jail Tile
     if (tile.type === TileType.GOTOJAIL) {
-        if (state.gov === 'right') {
-            // RIGHT GOV: NO JAIL
-            finalState.logs.push('⚖️ Gobierno de Derechas: La seguridad privada te deja ir. No entras en la cárcel.');
+        const jailRules = getJailRules(state.gov);
+        
+        if (jailRules.immune) {
+            // RIGHT or ANARCHY GOV: NO JAIL
+            finalState.logs.push(`⚖️ Gobierno ${state.gov.toUpperCase()}: Inmunidad aplicada. No entras en la cárcel.`);
             finalState.rolled = true;
         } else {
             // Find actual Jail Tile ID
             const jailTile = state.tiles.find(t => t.type === TileType.JAIL);
-            const jailPos = jailTile ? jailTile.id : 10; // Fallback to 10 if not found
+            const jailPos = jailTile ? jailTile.id : 10; 
 
-            player.jail = 3;
+            player.jail = jailRules.duration; // Use gov duration rule
             player.pos = jailPos;
             player.doubleStreak = 0;
             finalState.logs.push('👮 ¡A la cárcel!');
@@ -203,6 +206,11 @@ export const handleLandingLogic = (state: GameState): GameState => {
         finalState.logs = [`🕵️ FBI CORRUPTO: ${player.name} confisca el bote de impuestos de $${formatMoney(bonus)}.`, ...finalState.logs];
         newPlayers[pIdx] = player; // Update player again with new money
         finalState.players = newPlayers;
+    }
+
+    // QUIZ LOGIC: Auto-Open Modal
+    if (tile.type === TileType.QUIZ) {
+        finalState.selectedTileId = newPos;
     }
 
     return finalState;

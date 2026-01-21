@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { Player, INITIAL_MONEY } from '../../../types';
 import { PLAYER_COLORS } from '../../../constants';
@@ -101,7 +102,8 @@ export const useSetupFlow = (onStartGame: (payload: { players: Player[], logs: s
                 inventory: [],
                 offshoreMoney: 0,
                 farlopa: 0,
-                highTurns: 0
+                highTurns: 0,
+                genderAbilityCooldown: 0 // New Prop
             });
         });
 
@@ -127,7 +129,8 @@ export const useSetupFlow = (onStartGame: (payload: { players: Player[], logs: s
                 inventory: [],
                 offshoreMoney: 0,
                 farlopa: 0,
-                highTurns: 0
+                highTurns: 0,
+                genderAbilityCooldown: 0 // New Prop
             }); 
         }
         

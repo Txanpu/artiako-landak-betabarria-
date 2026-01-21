@@ -52,6 +52,7 @@ export const isPowerOff = (state: GameState): boolean => state.activeEvent?.titl
 
 export const canProxenetaCheat = (player: Player, baseProb: number): boolean => {
     if (player.role !== 'proxeneta') return false;
+    // Base chance + 20% flat bonus for being Proxeneta
     return Math.random() < (baseProb + 0.20); 
 };
 

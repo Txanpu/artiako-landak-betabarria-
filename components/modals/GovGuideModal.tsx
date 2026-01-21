@@ -27,11 +27,11 @@ export const GovGuideModal: React.FC<GovGuideModalProps> = ({ state, dispatch })
             id: 'right',
             title: 'DERECHA',
             color: 'bg-blue-900 border-blue-500 text-blue-100',
-            desc: 'Mercado libre y seguridad privada. Menos impuestos.',
+            desc: 'Mercado libre, ley y orden. Beneficios fiscales.',
             perks: [
-                '⚖️ Inmunidad ante ciertos arrestos (evitas cárcel por eventos).',
-                '💵 Subvenciones a la empresa (Bonos por género/rol).',
-                '💸 Tax: -20% (Subvención) | Seguridad: Alta'
+                '🏗️ Ley del Suelo: Construir cuesta la mitad (50% descuento).',
+                '👮 Desokupa Express: Los okupas son desalojados automáticamente al final del turno.',
+                '🏝️ Amnistía Fiscal: Cuentas Offshore generan 5% interés y 0% comisión.'
             ]
         },
         {
@@ -40,9 +40,10 @@ export const GovGuideModal: React.FC<GovGuideModalProps> = ({ state, dispatch })
             color: 'bg-purple-900 border-purple-500 text-purple-100',
             desc: 'Control total. El Estado interviene y expropia.',
             perks: [
-                '🏚️ Expropiaciones forzosas de propiedades sin edificar.',
-                '🔨 Compra directa permitida (sin subasta) de propiedades libres.',
-                '💸 Tax: 10% | Riesgo: Expropiación'
+                '👮 Ley de Vagos: Expropiación forzosa de solares vacíos al azar.',
+                '🔒 Sin Fianza: Prohibido pagar para salir de la cárcel.',
+                '🚁 Decretazo: Compra directa permitida sin subasta (Eficiencia).',
+                '💸 Tax: 10% | Riesgo: Alto'
             ]
         },
         {
@@ -60,11 +61,12 @@ export const GovGuideModal: React.FC<GovGuideModalProps> = ({ state, dispatch })
             id: 'anarchy',
             title: 'ANARQUÍA',
             color: 'bg-red-950 border-red-600 text-red-100',
-            desc: 'Sin reglas. Caos absoluto.',
+            desc: 'Narco-Estado sin ley. El crimen manda.',
             perks: [
-                '🔥 Sin impuestos ni ayudas.',
-                '🧨 Alta probabilidad de disturbios y eventos caóticos.',
-                '💸 Tax: 0% | Caos: Máximo'
+                '💀 Plata o Plomo: Intimida para no pagar alquiler (Riesgo: Hospital).',
+                '📦 Cárteles: Los monopolios generan droga cada turno.',
+                '🕶️ Mercado Negro: Vende droga o contrata sicarios en Hacienda.',
+                '💸 Tax: 0% | Ley: Inexistente'
             ]
         }
     ];

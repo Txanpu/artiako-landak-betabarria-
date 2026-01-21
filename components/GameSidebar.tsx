@@ -24,21 +24,12 @@ export const GameSidebar: React.FC<GameSidebarProps> = ({
     return (
         <div className="hidden lg:flex w-80 h-full bg-[#0b1120] border-l border-white/5 flex-col shadow-2xl z-40 relative">
             
-            {/* Minimalist Top Bar for Controls */}
-            <div className="flex justify-end p-2 gap-2 border-b border-white/5 bg-slate-900/50">
-                <button 
-                    onClick={onUndo} 
-                    disabled={!canUndo} 
-                    className="px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white disabled:opacity-20 transition-all border border-slate-700"
-                >
-                    Deshacer
-                </button>
-                <button 
-                    onClick={onReset} 
-                    className="px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-red-900/20 text-red-500 hover:bg-red-900/40 border border-red-900/30 transition-all"
-                >
-                    Reset
-                </button>
+            {/* Header / Info Area (Controls removed) */}
+            <div className="p-4 border-b border-white/5 bg-slate-900/50">
+                <div className="flex justify-between items-center">
+                    <h2 className="text-white font-black uppercase tracking-wider text-sm">ARTIA LANDAK</h2>
+                    <div className="text-[10px] text-slate-500 font-mono bg-black/30 px-2 py-1 rounded">Turno {state.turnCount}</div>
+                </div>
             </div>
             
             {currentPlayer ? (

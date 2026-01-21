@@ -65,6 +65,7 @@ export const createInitialState = (): GameState => {
       showDarkWeb: false,
       showGovGuide: false, 
       showWeatherModal: false, // Initial Value
+      showFbiModal: false, // NEW
       
       // UI Metrics
       metrics: {},

@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { GameState, TileType } from '../types';
 import { formatMoney } from '../utils/gameLogic';
+import { canAuction, canBuyDirectly } from '../utils/governmentRules';
 
 interface MobileSidebarProps {
     state: GameState;
@@ -27,8 +28,8 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({
     const isOwnerless = currentTile?.type === TileType.PROP && currentTile.owner === null;
     const mustPayRent = currentTile?.type === TileType.PROP && currentTile.owner !== null && currentTile.owner !== currentPlayer?.id && currentTile.owner !== 'E';
     
-    const canBuy = isOwnerless && currentPlayer && currentPlayer.money >= (currentTile?.price || 0) && state.gov === 'authoritarian';
-    const canAuction = isOwnerless && ['right', 'libertarian', 'anarchy'].includes(state.gov);
+    const canBuy = isOwnerless && currentPlayer && currentPlayer.money >= (currentTile?.price || 0) && canBuyDirectly(state.gov);
+    const allowAuction = isOwnerless && canAuction(state.gov);
     const isBlocked = isOwnerless && state.gov === 'left';
     const isHacker = currentPlayer?.role === 'hacker';
 
@@ -144,7 +145,7 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({
                                                     COMPRAR (${currentTile?.price})
                                                 </button>
                                             )}
-                                            {canAuction && (
+                                            {allowAuction && (
                                                 <button onClick={() => dispatch({type:'START_AUCTION', payload: currentTile?.id})} className="bg-purple-600 text-white py-2 rounded font-bold text-xs hover:bg-purple-500">
                                                     SUBASTAR
                                                 </button>

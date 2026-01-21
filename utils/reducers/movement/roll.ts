@@ -4,6 +4,7 @@ import { rollDice } from '../../gameLogic';
 import { getNearestTileBySubtype } from '../../board';
 import { handleLandingLogic } from '../../movement/landingLogic';
 import { navigationReducer } from './navigation';
+import { getJailRules } from '../../governmentRules';
 
 export const handleRollDice = (state: GameState, action: any): GameState => {
     if (state.rolled) return state;
@@ -27,9 +28,6 @@ export const handleRollDice = (state: GameState, action: any): GameState => {
     // Sum Dice
     let total = diceResults.reduce((a: number, b: number) => a + b, 0);
     
-    // Logic for Doubles: Check if ANY two dice are equal? Or specifically first two? 
-    // Standard Monopoly with speed die uses first two. Let's use first two for doubles logic to keep it simple.
-    // OR strict: All must match? No, let's stick to D1 == D2 for "Doubles".
     const d1 = diceResults[0];
     const d2 = diceResults[1];
     const isDouble = d1 === d2;
@@ -51,7 +49,6 @@ export const handleRollDice = (state: GameState, action: any): GameState => {
     
     // --- JAIL LOGIC START ---
     if (player.jail > 0) {
-        // Just use first 2 dice for Jail logic to be fair
         logs = [`${player.name} tiró ${d1} + ${d2} en la cárcel.`];
         let newPlayers = [...state.players];
 
@@ -68,7 +65,7 @@ export const handleRollDice = (state: GameState, action: any): GameState => {
         } else {
             player.jail--;
             if (player.jail === 0) {
-                const FINE = 50; // This assumes standard fine, could use dynamic but usually forced bail is constant
+                const FINE = 50; 
                 player.money -= FINE;
                 state.estadoMoney += FINE;
                 logs.push(`⏳ Último intento fallido. Pagas fianza forzosa de $${FINE} y mueves.`);
@@ -92,21 +89,21 @@ export const handleRollDice = (state: GameState, action: any): GameState => {
     // 0-0 RULE: Repeat Tile (Only first 2 dice)
     if (d1 === 0 && d2 === 0) {
         logs.push('⟳ Regla 0–0: Repites casilla.');
-        const newPlayers = [...state.players];
-        newPlayers[pIdx] = player; 
-        return handleLandingLogic({ ...state, players: newPlayers, dice: [0,0], rolled: true, logs: [...logs, ...state.logs] });
+        // We do NOT return here anymore. We let it fall through to Double Logic.
+        // Total is 0, so navigationReducer will trigger handleLandingLogic immediately on current tile.
+        // isDouble is true, so rolled will be false (re-roll allowed).
     }
 
-    // SNAKE EYES RULE
+    // SNAKE EYES RULE (1-1)
     if (d1 === 1 && d2 === 1) {
-        if (state.gov === 'right') {
-            logs.push('🐍 Ojos de Serpiente: Gobierno Right anula la cárcel. Te salvas.');
-            // Just end turn or continue? Usually snake eyes ends turn.
+        const jailRules = getJailRules(state.gov);
+        if (jailRules.immune) {
+            logs.push(`🐍 Ojos de Serpiente: Gobierno ${state.gov.toUpperCase()} anula la cárcel. Te salvas.`);
             return { ...state, dice: [1,1], rolled: true, logs: [...logs, ...state.logs] };
         } else {
             logs.push('🐍 Ojos de Serpiente: ¡Cárcel directa!');
             const jailTile = state.tiles.find(t => t.type === TileType.JAIL);
-            player.jail = 3;
+            player.jail = jailRules.duration;
             player.pos = jailTile ? jailTile.id : 10;
             player.doubleStreak = 0;
             const newPlayers = [...state.players];
@@ -130,13 +127,14 @@ export const handleRollDice = (state: GameState, action: any): GameState => {
     if (isDouble) {
         player.doubleStreak = (player.doubleStreak || 0) + 1;
         if (player.doubleStreak >= 3) {
-            if (state.gov === 'right') {
-                logs.push('💥 3 Dobles seguidos: Gobierno Right anula la cárcel. Pierdes el turno.');
+            const jailRules = getJailRules(state.gov);
+            if (jailRules.immune) {
+                logs.push(`💥 3 Dobles: Gobierno ${state.gov.toUpperCase()} anula la cárcel. Pierdes el turno.`);
                 return { ...state, dice: diceResults, rolled: true, logs: [...logs, ...state.logs] };
             } else {
                 logs.push('💥 3 Dobles seguidos: ¡A la cárcel!');
                 const jailTile = state.tiles.find(t => t.type === TileType.JAIL);
-                player.jail = 3;
+                player.jail = jailRules.duration;
                 player.pos = jailTile ? jailTile.id : 10;
                 player.doubleStreak = 0;
                 const newPlayers = [...state.players];

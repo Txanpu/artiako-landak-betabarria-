@@ -2,6 +2,7 @@
 import React from 'react';
 import { GameState, TileData, Player } from '../../../../types';
 import { formatMoney } from '../../../../utils/gameLogic';
+import { canAuction, canBuyDirectly } from '../../../../utils/governmentRules';
 
 interface Props {
     state: GameState;
@@ -15,8 +16,8 @@ export const UtilityBill: React.FC<Props> = ({ state, dispatch, t, currentPlayer
     const isOwnerlessProp = t.owner === null;
     const isAtLocation = currentPlayer && currentPlayer.pos === t.id;
     
-    const canBuyDirect = isOwnerlessProp && isAtLocation && currentPlayer && currentPlayer.money >= (t.price || 0) && state.gov === 'authoritarian';
-    const canAuction = isOwnerlessProp && isAtLocation && ['right', 'libertarian', 'anarchy'].includes(state.gov);
+    const canBuyDirect = isOwnerlessProp && isAtLocation && currentPlayer && currentPlayer.money >= (t.price || 0) && canBuyDirectly(state.gov);
+    const allowAuction = isOwnerlessProp && isAtLocation && canAuction(state.gov);
     
     const mortgageValue = Math.floor((t.price || 0) * 0.5);
 
@@ -64,7 +65,7 @@ export const UtilityBill: React.FC<Props> = ({ state, dispatch, t, currentPlayer
 
                 <div className="space-y-2">
                     {canBuyDirect && <button onClick={() => {dispatch({type: 'BUY_PROP'}); dispatch({type: 'CLOSE_MODAL'})}} className="w-full bg-black text-white py-2 font-bold hover:bg-slate-800 uppercase tracking-tighter">Adquirir Concesión</button>}
-                    {canAuction && <button onClick={() => {dispatch({type: 'START_AUCTION', payload: t.id}); dispatch({type: 'CLOSE_MODAL'})}} className="w-full border-2 border-black text-black py-2 font-bold hover:bg-slate-100">Licitación Pública (Subasta)</button>}
+                    {allowAuction && <button onClick={() => {dispatch({type: 'START_AUCTION', payload: t.id}); dispatch({type: 'CLOSE_MODAL'})}} className="w-full border-2 border-black text-black py-2 font-bold hover:bg-slate-100">Licitación Pública (Subasta)</button>}
                     
                     {/* ACTIVE ABILITY SABOTAGE */}
                     {isOwner && isAtLocation && !t.mortgaged && (

@@ -2,9 +2,14 @@
 import React from 'react';
 import { GameState, TileData, Player, TileType } from '../../../types';
 import { GotoJailView, JailView } from './views/special/PrisonViews';
-import { BankView, SlotsView, TaxView } from './views/special/EconomicViews';
-import { ParkView, EventCardView, StartView, DefaultView, GreyhoundView } from './views/special/MiscViews';
-import { GymEntryView } from './views/special/GymEntryView'; // New View
+import { BankView, TaxView } from './views/special/EconomicViews';
+import { SlotsView } from './views/special/SlotsView'; // Import from standalone file
+import { GymEntryView } from './views/special/GymEntryView';
+import { StartView } from './views/special/StartView';
+import { ParkView } from './views/special/ParkView';
+import { EventCardView } from './views/special/EventCardView';
+import { GreyhoundView } from './views/special/GreyhoundView';
+import { DefaultView } from './views/special/DefaultView';
 
 interface SpecialTileModalProps {
     state: GameState;
@@ -31,7 +36,7 @@ export const SpecialTileModal: React.FC<SpecialTileModalProps> = (props) => {
     if (t.type === TileType.START) return <StartView {...passProps} />;
     if (t.type === TileType.PARK) return <ParkView {...passProps} />;
     if (t.name === 'Suerte' || t.name.includes('Comunidad')) return <EventCardView {...passProps} />;
-    if (t.subtype === 'greyhound') return <GreyhoundView {...passProps} />;
+    if (t.subtype === 'greyhound') return <GreyhoundView {...passProps} state={state} />;
 
     // GYM VIEW
     if (t.subtype === 'gym') return <GymEntryView {...passProps} />;
@@ -39,10 +44,22 @@ export const SpecialTileModal: React.FC<SpecialTileModalProps> = (props) => {
     // QUIZ ENTRY VIEW
     if (t.type === TileType.QUIZ) {
         const isAtLocation = currentPlayer.pos === t.id;
+        const isClosed = false; // Enabled for Salseo mode in Left Gov
         
         return (
-            <div className="bg-slate-900 text-white w-full max-w-md rounded-2xl overflow-hidden shadow-[0_0_60px_rgba(59,130,246,0.5)] border-4 border-yellow-500 animate-in zoom-in-95 relative" onClick={e => e.stopPropagation()}>
+            <div className="bg-slate-900 text-white w-full max-w-sm rounded-2xl overflow-hidden shadow-[0_0_60px_rgba(59,130,246,0.5)] border-4 border-yellow-500 animate-in zoom-in-95 relative" onClick={e => e.stopPropagation()}>
                 
+                {isClosed && (
+                    <div className="absolute inset-0 bg-slate-900/95 z-20 flex flex-col items-center justify-center text-center p-4">
+                        <div className="text-6xl mb-2">📺</div>
+                        <div className="text-2xl font-black text-red-500 uppercase tracking-widest border-4 border-red-500 p-2 transform -rotate-12">
+                            INTERVENIDO
+                        </div>
+                        <p className="mt-4 text-xs text-gray-400">"Televisión Pública bajo control estatal. Se suspenden los concursos."</p>
+                        <button onClick={close} className="mt-6 text-xs text-gray-500 hover:text-white underline">Cerrar</button>
+                    </div>
+                )}
+
                 {/* Background Graphics */}
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-blue-900 via-slate-950 to-black z-0"></div>
                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20 z-0"></div>

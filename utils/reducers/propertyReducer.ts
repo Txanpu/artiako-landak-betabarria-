@@ -16,6 +16,10 @@ export const propertyReducer = (state: GameState, action: any): GameState => {
         const tile = { ...state.tiles[tId] };
         const COST = 150;
 
+        if (state.gov === 'left') {
+            return { ...state, logs: ['🚫 Fiore cerrado por Ley de Moralidad Pública.', ...state.logs] };
+        }
+
         if (tile.owner === player.id && player.money >= COST && (tile.workersList?.length || 0) < 6) {
             player.money -= COST;
             state.estadoMoney += COST;

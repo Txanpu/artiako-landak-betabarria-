@@ -10,8 +10,9 @@ export const useBotTurn = (state: GameState, dispatch: React.Dispatch<any>) => {
         if (!state.gameStarted || state.activeEvent) return;
 
         const currentPlayer = state.players[state.currentPlayerIndex];
-        // Logic Trigger: Only if it's bot's turn, and no modal blocking (auction/trade)
-        if (currentPlayer && currentPlayer.isBot && !state.auction && !state.trade) {
+        // Logic Trigger: Only if it's bot's turn, and no modal blocking (auction/trade/election)
+        // CHECK ELECTION STATE TO PREVENT BOT FROM PLAYING DURING VOTING
+        if (currentPlayer && currentPlayer.isBot && !state.auction && !state.trade && (!state.election || !state.election.isOpen)) {
             
             const botTurn = async () => {
                 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -148,6 +149,7 @@ export const useBotTurn = (state: GameState, dispatch: React.Dispatch<any>) => {
         state.isMoving, 
         state.auction?.isOpen, 
         state.trade?.isOpen, 
+        state.election?.isOpen, // Added dependency
         // We include specific properties to trigger re-eval
         state.players[state.currentPlayerIndex]?.money,
         state.players[state.currentPlayerIndex]?.pos,

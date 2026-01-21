@@ -14,8 +14,14 @@ export const getRent = (tile: TileData, diceTotal: number = 0, tiles: TileData[]
       return 0;
   }
 
-  // --- ROLE ABILITIES: IMMUNITY CHECK ---
   const payer = state?.players[state.currentPlayerIndex];
+  
+  // --- PASSIVE: FEMALE VIP ENTRY (Rule 2b) ---
+  if (payer && payer.gender === 'female' && tile.subtype === 'fiore') {
+      return 0;
+  }
+
+  // --- ROLE ABILITIES: IMMUNITY CHECK ---
   if (payer) {
       if (payer.role === 'proxeneta' && state?.world.isNight) return 0;
       if (payer.role === 'okupa' && tile.subtype === 'utility') return 0;
@@ -63,8 +69,14 @@ export const getRent = (tile: TileData, diceTotal: number = 0, tiles: TileData[]
     }
   }
 
-  // Event multipliers
+  // Event multipliers & Government Rules
   if (state) {
+      // 1. LEFT GOVERNMENT RENT CAP (Topalloguer)
+      // Max rent is 200 unless owned by State ('E').
+      if (state.gov === 'left' && tile.owner !== 'E') {
+          rent = Math.min(rent, 200);
+      }
+
       if (state.rentEventMul && state.rentEventMul !== 1) {
           rent = Math.round(rent * state.rentEventMul);
       }

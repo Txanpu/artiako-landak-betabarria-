@@ -17,6 +17,29 @@ export const GENERAL_EVENTS: GameEvent[] = [
         }
     },
     {
+        id: 'ev_universal_income',
+        title: 'Paguita Universal',
+        description: 'El Estado reparte TODO su dinero entre el pueblo. Solidaridad obligatoria.',
+        effect: (state, idx) => {
+            if (state.estadoMoney <= 0) return { logs: ['💸 El Estado está en quiebra. No hay Paguita.'] };
+            
+            const active = state.players.filter(p => p.alive);
+            if (active.length === 0) return {};
+
+            const amountPerPerson = Math.floor(state.estadoMoney / active.length);
+            const p = state.players.map(pl => {
+                if (pl.alive) return { ...pl, money: pl.money + amountPerPerson };
+                return pl;
+            });
+
+            return { 
+                players: p, 
+                estadoMoney: 0, 
+                logs: [`🌈 PAGUITA UNIVERSAL: Se reparten ${formatMoney(state.estadoMoney)} ($${formatMoney(amountPerPerson)}/jugador).`] 
+            };
+        }
+    },
+    {
         id: 'ev_tax_audit',
         title: 'Inspección Fiscal',
         description: 'Hacienda somos todos. Pagas $100.',
@@ -97,8 +120,19 @@ export const GENERAL_EVENTS: GameEvent[] = [
     {
         id: 'ev_strike',
         title: 'Huelga General',
-        description: 'Sindicatos toman las calles. Sin alquileres ni ayudas por este turno.',
-        effect: (state, idx) => ({ logs: ['✊ Huelga General activa.'] })
+        description: 'Nadie se mueve. Los dueños de negocios pagan $50 por cada propiedad a la banca.',
+        effect: (state, idx) => {
+            const p = state.players.map(pl => {
+                if (!pl.alive) return pl;
+                const props = pl.props.length;
+                if (props > 0) {
+                    const cost = props * 50;
+                    return { ...pl, money: pl.money - cost };
+                }
+                return pl;
+            });
+            return { players: p, logs: ['✊ Huelga General: Propietarios multados con $50/propiedad.'] };
+        }
     },
     {
         id: 'ev_jail_card',

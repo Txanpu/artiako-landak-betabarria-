@@ -12,8 +12,13 @@ export const processTaxTile = (
     let fbiPot = state.fbiPot || 0;
     let log = null;
 
-    const taxRate = state.currentGovConfig.tax;
+    let taxRate = state.currentGovConfig.tax;
     
+    // FLORENTINO NERF: Pays Double Tax in Left Gov
+    if (state.gov === 'left' && player.role === 'florentino') {
+        taxRate *= 2; 
+    }
+
     // Positive Tax
     if (taxRate > 0) {
         const taxAmount = Math.floor(p.money * taxRate);
@@ -28,6 +33,7 @@ export const processTaxTile = (
             fbiPot += toPot;
             
             log = `💸 IMPUESTOS (${(taxRate*100).toFixed(0)}%): ${p.name} paga ${formatMoney(taxAmount)}.`;
+            if (state.gov === 'left' && player.role === 'florentino') log += " (Doble Tasa Florentino)";
         } else {
             log = `💸 IMPUESTOS: ${p.name} no tiene ingresos declarables.`;
         }
