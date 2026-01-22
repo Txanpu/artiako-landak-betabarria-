@@ -12,9 +12,11 @@ interface TileProps {
   heatVal?: number;
   isValidMove?: boolean;
   govConfig?: GovConfig;
+  currentPlayerId?: number;
+  pendingMoves?: number;
 }
 
-export const Tile: React.FC<TileProps> = ({ tile, players, onClick, config, heatVal, isValidMove, govConfig }) => {
+export const Tile: React.FC<TileProps> = ({ tile, players, onClick, config, heatVal, isValidMove, govConfig, currentPlayerId, pendingMoves }) => {
   const getBorderColor = (tile: TileData) => {
     if (tile.owner === 'E') return '3px solid #ffd700';
     if (typeof tile.owner === 'number') {
@@ -74,12 +76,26 @@ export const Tile: React.FC<TileProps> = ({ tile, players, onClick, config, heat
       {/* Players Overlay */}
       {playersHere.length > 0 && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 backdrop-blur-[1px]">
-          <div className="flex flex-wrap justify-center gap-1 p-1">
-            {playersHere.map(p => (
-              <div key={p.id} className="w-8 h-8 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-sm relative animate-bounce bg-slate-800" style={{ borderColor: p.color, animationDuration: `${1 + p.id * 0.2}s` }} title={p.name}>
-                {p.avatar}
-              </div>
-            ))}
+          <div className="flex flex-wrap justify-center gap-1 p-1 relative">
+            {playersHere.map(p => {
+              const isCurrentTurn = p.id === currentPlayerId;
+              const stepsLeft = pendingMoves || 0;
+              
+              return (
+                <div key={p.id} className="relative group/avatar">
+                  <div className={`w-8 h-8 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-sm relative ${isCurrentTurn && stepsLeft > 0 ? 'animate-bounce' : ''} bg-slate-800`} style={{ borderColor: p.color }} title={p.name}>
+                    {p.avatar}
+                  </div>
+                  
+                  {/* MOVEMENT COUNTER BUBBLE */}
+                  {isCurrentTurn && stepsLeft > 0 && (
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-yellow-400 text-black font-black text-[10px] px-1.5 py-0.5 rounded border-2 border-black shadow-lg z-50 whitespace-nowrap">
+                      {stepsLeft}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

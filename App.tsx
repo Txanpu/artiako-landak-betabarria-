@@ -47,6 +47,11 @@ const App: React.FC = () => {
     if (e.target instanceof HTMLInputElement) return;
     if (e.key.toLowerCase() === 's') { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); alert('💾 Guardado'); }
     if (e.key.toLowerCase() === 'l') { const saved = localStorage.getItem(SAVE_KEY); if (saved) dispatch({type:'LOAD_GAME', payload: JSON.parse(saved)}); }
+    
+    // NEW SHORTCUTS
+    if (e.key.toLowerCase() === 't') { dispatch({ type: 'TOGGLE_LOGS_MODAL' }); }
+    if (e.key.toLowerCase() === 'h') { dispatch({ type: 'TOGGLE_HUD_VISIBILITY' }); }
+
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
         if (historyRef.current.canUndo()) {
             const prev = historyRef.current.undo();
@@ -67,7 +72,7 @@ const App: React.FC = () => {
       <div className="flex-1 relative overflow-hidden flex items-center justify-center bg-[#050505]">
         
         {/* New Floating HUD (Replaces old weather/gov displays) */}
-        <GameHUD state={state} dispatch={dispatch} />
+        {!state.hideHud && <GameHUD state={state} dispatch={dispatch} />}
         
         <div className="absolute inset-0 flex items-center justify-center p-2 md:p-8 z-0">
             <Board 

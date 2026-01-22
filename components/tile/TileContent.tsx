@@ -17,19 +17,32 @@ interface TileContentProps {
 
 export const TileContent: React.FC<TileContentProps> = ({ tile, config, isMortgaged, govConfig, players }) => {
     // Orientation helpers
-    let flexClass = 'flex-col';
+    let standardFlex = 'flex-col'; // For Standard Props (Bar split)
+    let specialFlex = 'flex-col';  // For Specials (Item stack)
     let textRot = 'rotate-0';
 
     if (!config.isDiagonal) {
-        if (config.rotation === 90) { // Left Side
-           flexClass = 'flex-row-reverse';
+        if (config.rotation === 90) { // Left Side (Vertical)
+           // Standard: Bar on Right, Content Left (Row Reverse)
+           standardFlex = 'flex-row-reverse';
+           // Special: Stack Bottom-to-Top (Header at Bottom/Left due to rotation)
+           specialFlex = 'flex-col-reverse';
            textRot = 'rotate-90';
-        } else if (config.rotation === 180) { // Top Side
-           flexClass = 'flex-col-reverse';
+        } else if (config.rotation === 180) { // Top Side (Horizontal)
+           // Standard: Bar on Bottom (Col Reverse)
+           standardFlex = 'flex-col-reverse';
+           // Special: Stack Right-to-Left (Header at Right)
+           specialFlex = 'flex-row-reverse';
            textRot = 'rotate-180';
-        } else if (config.rotation === -90) { // Right Side
-           flexClass = 'flex-row';
+        } else if (config.rotation === -90) { // Right Side (Vertical)
+           // Standard: Bar on Left (Row)
+           standardFlex = 'flex-row';
+           // Special: Stack Top-to-Bottom (Header at Top)
+           specialFlex = 'flex-col';
            textRot = '-rotate-90';
+        } else { // Bottom Side (Horizontal) - Rot 0
+           standardFlex = 'flex-col';
+           specialFlex = 'flex-row';
         }
     }
 
@@ -46,17 +59,17 @@ export const TileContent: React.FC<TileContentProps> = ({ tile, config, isMortga
 
     // --- 1. SPECIAL RENDER: CASINOS (Override Prop type) ---
     if (['casino_bj', 'casino_roulette'].includes(tile.subtype || '')) {
-        return <SpecialRenderer tile={tile} config={config} textRot={textRot} />;
+        return <SpecialRenderer tile={tile} config={config} textRot={textRot} flexClass={specialFlex} />;
     }
 
     // --- 2. SPECIAL RENDER: TRANSPORTS ---
     if (['rail', 'bus', 'ferry', 'air'].includes(tile.subtype || '')) {
-        return <TransportRenderer tile={tile} config={config} ownerColor={ownerColor} isMortgaged={isMortgaged} textRot={textRot} />;
+        return <TransportRenderer tile={tile} config={config} ownerColor={ownerColor} isMortgaged={isMortgaged} textRot={textRot} flexClass={specialFlex} />;
     }
 
     // --- 3. SPECIAL RENDER: UTILITIES ---
     if (tile.subtype === 'utility') {
-        return <UtilityRenderer tile={tile} config={config} ownerColor={ownerColor} isMortgaged={isMortgaged} textRot={textRot} />;
+        return <UtilityRenderer tile={tile} config={config} ownerColor={ownerColor} isMortgaged={isMortgaged} textRot={textRot} flexClass={specialFlex} />;
     }
 
     // --- 4. SPECIAL TILE OVERRIDES (Jail, Bank, etc) ---
@@ -65,12 +78,12 @@ export const TileContent: React.FC<TileContentProps> = ({ tile, config, isMortga
         [TileType.GOTOJAIL, TileType.JAIL, TileType.BANK, TileType.SLOTS, TileType.PARK, TileType.QUIZ].includes(tile.type) || 
         tile.name === 'Suerte' || 
         tile.name.includes('Comunidad') ||
-        tile.subtype === 'greyhound' // Added greyhound check here
+        tile.subtype === 'greyhound'
     ) {
-        const special = <SpecialRenderer tile={tile} config={config} textRot={textRot} />;
+        const special = <SpecialRenderer tile={tile} config={config} textRot={textRot} flexClass={specialFlex} />;
         if (special) return special;
     }
 
     // --- 5. STANDARD RENDER ---
-    return <StandardRenderer tile={tile} config={config} ownerColor={ownerColor} isMortgaged={isMortgaged} govConfig={govConfig} textRot={textRot} flexClass={flexClass} />;
+    return <StandardRenderer tile={tile} config={config} ownerColor={ownerColor} isMortgaged={isMortgaged} govConfig={govConfig} textRot={textRot} flexClass={standardFlex} />;
 };

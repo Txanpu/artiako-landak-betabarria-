@@ -107,6 +107,7 @@ export interface GameState {
   showFbiModal: boolean; // NEW: FBI Investigation UI
   showAvatarSelection: boolean; // NEW: Avatar Switcher
   showLogsModal: boolean; // NEW: System Logs Modal
+  hideHud: boolean; // NEW: Toggle visibility of top-left HUD
   
   // Metrics History for Sparklines
   metrics: Record<number, { turn: number, money: number, netWorth: number }[]>;

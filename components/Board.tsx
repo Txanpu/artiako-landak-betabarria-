@@ -26,6 +26,8 @@ export const Board: React.FC<BoardProps> = ({ state, onTileClick, focusId }) => 
   const logoStart = 20; 
   const logoSpan = 7;
 
+  const currentPlayerId = state.players[state.currentPlayerIndex]?.id;
+
   return (
     <div className={`
         ${isZoomedOut ? 'fixed inset-0 z-0 bg-[#121212] overflow-hidden' : 'w-full h-full bg-[#121212] overflow-auto scroll-smooth p-8 flex'}
@@ -83,6 +85,8 @@ export const Board: React.FC<BoardProps> = ({ state, onTileClick, focusId }) => 
                 heatVal={state.showHeatmap ? state.heatmap?.[tile.id] : undefined}
                 isValidMove={isValidMove}
                 govConfig={state.currentGovConfig}
+                currentPlayerId={currentPlayerId}
+                pendingMoves={state.pendingMoves}
               />
             </div>
           );

@@ -4,111 +4,59 @@ import {
     handleGovernmentTick, 
     processTurnLoans, 
     performStateAutoBuild, 
-    processFioreTips, 
-    formatMoney
+    processFioreTips 
 } from '../../gameLogic';
 import { checkLoanMarginCalls } from '../../risk';
 import { checkFiestaClandestina } from '../../events';
 import { processMaintenanceAndBankruptcy } from './turnEnd/bankruptcy';
 import { calculateMetrics } from './turnEnd/metrics';
 import { tickWorld } from '../../world';
+import { handleCounters, handleRolePassives } from './turnEnd/passiveLogic'; // Imported Logic
 
 export const resolveEndTurn = (state: GameState): GameState => {
     let epIdx = state.currentPlayerIndex;
-    let ePlayer = state.players[epIdx];
+    let ePlayer = { ...state.players[epIdx] };
     let endLogs: string[] = [];
     let ePlayers = [...state.players];
     let eTiles = [...state.tiles];
     let currentEstadoMoney = state.estadoMoney;
 
-    // --- DECREMENT COUNTERS ---
-    if (ePlayer.immunityTurns && ePlayer.immunityTurns > 0) {
-        ePlayer.immunityTurns--;
-        if (ePlayer.immunityTurns === 0) endLogs.push(`🛡️ La inmunidad de ${ePlayer.name} ha expirado.`);
-    }
-    
-    if (ePlayer.highTurns && ePlayer.highTurns > 0) {
-        ePlayer.highTurns--;
-        if (ePlayer.highTurns === 0) endLogs.push(`😴 El efecto de la Farlopa se ha pasado para ${ePlayer.name}.`);
-    }
+    // 1. Handle Counters (Immunity, High, Cooldowns)
+    const countersRes = handleCounters(ePlayer, eTiles, endLogs);
+    ePlayer = countersRes.updatedPlayer;
+    eTiles = countersRes.updatedTiles;
 
-    // Gender Cooldown
-    if (ePlayer.genderAbilityCooldown > 0) {
-        ePlayer.genderAbilityCooldown--;
-    }
+    // 2. Handle Role Passives (Hacker, Fiore Expenses, Welfare, Addiction)
+    const passivesRes = handleRolePassives(state, ePlayer, eTiles, endLogs, ePlayer.money, currentEstadoMoney);
+    ePlayer.money = passivesRes.updatedMoney;
+    currentEstadoMoney = passivesRes.updatedStateMoney;
 
-    eTiles = eTiles.map(t => {
-        if (t.blockedRentTurns && t.blockedRentTurns > 0) {
-            return { ...t, blockedRentTurns: t.blockedRentTurns - 1 };
-        }
-        return t;
-    });
-
-    // --- ROLE & GOV LOGIC ON END TURN ---
-    
-    // 1. Hacker Mining
-    if (ePlayer.role === 'hacker') {
-        const miningProfit = Math.floor(Math.random() * 61); 
-        if (miningProfit > 0) {
-            ePlayer.money += miningProfit;
-            currentEstadoMoney += miningProfit; 
-            endLogs.push(`💻 Minería Cripto: ${ePlayer.name} genera ${formatMoney(miningProfit)}.`);
-        }
-    }
-
-    // 2. SINDICATO FIORE
-    const fioreTiles = eTiles.filter(t => t.subtype === 'fiore' && t.owner === ePlayer.id);
-    if (fioreTiles.length > 0) {
-        let totalWages = 0;
-        fioreTiles.forEach(t => {
-            const workers = t.workersList?.length || 0;
-            if (workers > 0) {
-                totalWages += workers * 50;
-            }
-        });
-
-        if (totalWages > 0) {
-            ePlayer.money -= totalWages;
-            currentEstadoMoney += totalWages;
-            endLogs.push(`🚩 SINDICATO FIORE: ${ePlayer.name} paga ${formatMoney(totalWages)} de Seguridad Social por sus trabajadoras.`);
-        }
-    }
-
-    // 3. CIVIL SUBSIDY (Ingreso Mínimo)
-    if (state.gov === 'left' && ePlayer.role === 'civil' && Math.random() < 0.20) {
-        const subsidy = 50;
-        ePlayer.money += subsidy;
-        currentEstadoMoney -= subsidy;
-        endLogs.push(`🍞 Ingreso Mínimo Vital: ${ePlayer.name} (Civil) recibe subsidio de $50.`);
-    }
-
-    const loanRes = processTurnLoans(state, epIdx);
+    // 3. Process Loans
+    // We update the player in the array first because loan processor expects full array state sometimes
+    ePlayers[epIdx] = ePlayer;
+    const loanRes = processTurnLoans({ ...state, players: ePlayers }, epIdx);
     endLogs.push(...(loanRes.logs || []));
     ePlayers = loanRes.players as Player[];
+    // Get updated player back reference
+    ePlayer = ePlayers[epIdx]; 
     
-    if (ePlayer.fentanylAddiction) {
-        const FENT_COST = 15;
-        if (ePlayer.money >= FENT_COST) {
-            ePlayer.money -= FENT_COST;
-            currentEstadoMoney += FENT_COST;
-            endLogs.push(`💊 ${ePlayer.name} paga $${FENT_COST} por su dosis de fentanilo.`);
-        }
-    }
-    
-    // Fiore Income (Tips)
-    const fiorePay = state.tiles.filter(t => t.subtype === 'fiore' && t.owner === ePlayer.id).reduce((acc, t) => acc + (t.workers||0)*70, 0); 
-    if(fiorePay > 0) endLogs.push(...processFioreTips(state, ePlayers[epIdx], fiorePay));
+    // 4. Fiore Income (Tips) - Positive Income
+    const fiorePay = eTiles.filter(t => t.subtype === 'fiore' && t.owner === ePlayer.id).reduce((acc, t) => acc + (t.workers||0)*70, 0); 
+    if(fiorePay > 0) endLogs.push(...processFioreTips(state, ePlayer, fiorePay));
 
+    // 5. State Logic (Auto-Build)
     const stateBuild = performStateAutoBuild(eTiles, state.housesAvail, state.hotelsAvail, currentEstadoMoney, state.gov);
     eTiles = stateBuild.tiles;
     currentEstadoMoney = stateBuild.estadoMoney;
     endLogs.push(...stateBuild.logs);
 
+    // 6. Government Tick (Policies & Events)
     const govUpdate = handleGovernmentTick({ ...state, players: ePlayers, tiles: eTiles, estadoMoney: currentEstadoMoney });
     if (govUpdate.estadoMoney !== undefined) currentEstadoMoney = govUpdate.estadoMoney;
     if (govUpdate.tiles) eTiles = govUpdate.tiles; 
     let finalPlayers = govUpdate.players || ePlayers;
 
+    // 7. Maintenance & Bankruptcy Check
     const bankrRes = processMaintenanceAndBankruptcy(state, finalPlayers, eTiles, epIdx, currentEstadoMoney);
     finalPlayers = bankrRes.players;
     eTiles = bankrRes.tiles;
@@ -116,6 +64,7 @@ export const resolveEndTurn = (state: GameState): GameState => {
     currentEstadoMoney = bankrRes.estadoMoney;
     const nextIdx = bankrRes.nextIndex;
 
+    // 8. World Events (Fiesta, Day/Night)
     const randomEventUpdate = checkFiestaClandestina({ ...state, players: finalPlayers, estadoMoney: currentEstadoMoney });
     let finalLogs = [...endLogs, ...(govUpdate.logs||[]), ...state.logs];
     
@@ -123,9 +72,9 @@ export const resolveEndTurn = (state: GameState): GameState => {
     if (worldRes.world) state.world = worldRes.world;
     if (worldRes.logs) finalLogs = worldRes.logs;
 
+    // 9. Metrics & cleanup
     const newMetrics = calculateMetrics(state.metrics, finalPlayers, eTiles, state.loans, state.turnCount);
 
-    // OPTIMIZATION: Cap logs to prevent lag
     if (finalLogs.length > 60) {
         finalLogs = finalLogs.slice(0, 60);
     }
@@ -148,11 +97,11 @@ export const resolveEndTurn = (state: GameState): GameState => {
         finalStateData = { ...finalStateData, ...randomEventUpdate };
         if (randomEventUpdate.logs) {
             finalLogs = [...randomEventUpdate.logs, ...finalLogs];
-            // Re-cap just in case
             if (finalLogs.length > 60) finalLogs = finalLogs.slice(0, 60);
         }
     }
     
+    // 10. Risk Check for Next Player
     const nextPlayerId = finalPlayers[nextIdx].id;
     const loanRisk = checkLoanMarginCalls(finalStateData, nextPlayerId);
     if (loanRisk.logs.length > 0) {
