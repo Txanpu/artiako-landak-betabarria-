@@ -1,5 +1,5 @@
 
-import { GameState } from '../../types';
+import { GameState, TileType } from '../../types';
 import { getInsiderChoice } from '../risk';
 import { getRent, formatMoney } from '../gameLogic';
 
@@ -8,6 +8,89 @@ export const specialReducer = (state: GameState, action: any): GameState => {
     // Toggle FBI Modal
     if (action.type === 'TOGGLE_FBI_MODAL') {
         return { ...state, showFbiModal: !state.showFbiModal };
+    }
+
+    // --- NEW: STEAL TREASURY (EL GOLPE) ---
+    if (action.type === 'STEAL_TREASURY') {
+        const pIdx = state.currentPlayerIndex;
+        const player = state.players[pIdx];
+        
+        // 1. Validation: Can only steal during your turn, if alive, and not jailed
+        if (player.jail > 0) return { ...state, logs: ['🚫 No puedes robar desde la cárcel.', ...state.logs] };
+        if (state.estadoMoney <= 0) return { ...state, logs: ['🚫 Las arcas están vacías. No hay nada que robar.', ...state.logs] };
+
+        // 2. Cooldown check (Optional, or just high risk)
+        // Let's use simple risk calculation
+        
+        let successChance = 0.20; // Base 20%
+        let jailTurns = 3;
+        let heistName = 'Atraco';
+
+        // Gov Modifiers
+        if (state.gov === 'anarchy') { 
+            successChance = 0.60; 
+            heistName = 'Saqueo Anarquista'; 
+            jailTurns = 1; // Little punishment
+        }
+        if (state.gov === 'authoritarian') { 
+            successChance = 0.05; 
+            heistName = 'Golpe al Régimen'; 
+            jailTurns = 6; // Gulag punishment
+        }
+        if (state.gov === 'libertarian') {
+            successChance = 0.30;
+        }
+
+        // Role Modifiers
+        if (player.role === 'hacker') { successChance += 0.25; heistName += ' Digital'; }
+        if (player.role === 'florentino') { successChance += 0.15; heistName = 'Desfalco de Guante Blanco'; }
+        if (player.role === 'okupa') { successChance += 0.10; }
+        if (player.role === 'fbi') { successChance -= 0.10; } // FBI shouldn't steal easily (Conflict of interest)
+
+        // Roll
+        const roll = Math.random();
+        const success = roll < successChance;
+
+        const newPlayers = [...state.players];
+        let newEstadoMoney = state.estadoMoney;
+        let logs = [...state.logs];
+
+        if (success) {
+            // Success: Steal between 10% and 30% of treasury, capped at $1000
+            const percent = 0.10 + (Math.random() * 0.20);
+            let loot = Math.floor(state.estadoMoney * percent);
+            if (loot > 1000) loot = 1000;
+            if (loot < 50) loot = 50; // Minimum heist
+            if (loot > state.estadoMoney) loot = state.estadoMoney;
+
+            newEstadoMoney -= loot;
+            newPlayers[pIdx] = { ...player, money: player.money + loot };
+            logs.unshift(`💰 ¡${heistName} EXITOSO! ${player.name} roba $${loot} de las arcas del Estado.`);
+        } else {
+            // Fail: Go to Jail + Fine
+            const fine = Math.min(player.money, 200);
+            newPlayers[pIdx] = { 
+                ...player, 
+                money: player.money - fine, 
+                jail: jailTurns, 
+                pos: 10, // Jail Position
+                doubleStreak: 0
+            };
+            newEstadoMoney += fine;
+            
+            // If Authoritarian, maybe confiscate property? (Too harsh for simple click)
+            logs.unshift(`👮 ¡ALARMA! ${player.name} pillado intentando robar las arcas. Multa de $${fine} y ${jailTurns} turnos de cárcel.`);
+        }
+
+        return {
+            ...state,
+            players: newPlayers,
+            estadoMoney: newEstadoMoney,
+            logs,
+            // If failed and jailed, cancel movement if any
+            pendingMoves: success ? state.pendingMoves : 0,
+            transportOptions: success ? state.transportOptions : []
+        };
     }
 
     // --- GENDER ABILITIES (ULTIMATES) ---

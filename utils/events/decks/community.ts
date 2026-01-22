@@ -92,5 +92,18 @@ export const COMMUNITY_CHEST_CARDS: GameEvent[] = [
         title: 'Community Chest',
         description: 'Ve a la Cárcel. Ve directamente sin pasar por Salida.',
         effect: Logic.effect_cc_gotojail
+    },
+    // NEW CARDS
+    {
+        id: 'cc_majaras_sun',
+        title: 'Caja de Comunidad',
+        description: 'La asamblea de majaras ha decidido mañana sol y buen tiempo.',
+        effect: Logic.effect_cc_majaras_sun
+    },
+    {
+        id: 'cc_majaras_rain',
+        title: 'Caja de Comunidad',
+        description: 'La asamblea de majaras ha decidido mañana lluvia y mal tiempo.',
+        effect: Logic.effect_cc_majaras_rain
     }
 ];

@@ -92,5 +92,12 @@ export const CHANCE_CARDS: GameEvent[] = [
         title: 'Suerte',
         description: 'Ve a la Cárcel. Ve directamente sin pasar por Salida.',
         effect: Logic.effect_ch_gotojail
+    },
+    // NEW CARD
+    {
+        id: 'ch_gender_swap',
+        title: 'Suerte',
+        description: 'Se te cambio de sexo, ahora no sabes que eres jijiji.',
+        effect: Logic.effect_ch_gender_swap
     }
 ];

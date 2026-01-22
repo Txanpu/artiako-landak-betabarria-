@@ -136,3 +136,27 @@ export const effect_cc_gotojail = (state: GameState, idx: number) => {
     p[idx] = player;
     return { players: p, rolled: false, logs: [`👮 ${player.name} enviado a la cárcel por Community Chest.`] };
 };
+
+// --- NUEVAS CARTAS: ASAMBLEA DE MAJARAS ---
+
+export const effect_cc_majaras_sun = (state: GameState, idx: number) => {
+    const newForecast = [...(state.world.forecast || [])];
+    // Colocamos 'sunny' al principio para que sea el siguiente tiempo
+    newForecast.unshift('sunny');
+    
+    return { 
+        world: { ...state.world, forecast: newForecast },
+        logs: ['☀️ La asamblea de majaras ha decidido mañana sol y buen tiempo.'] 
+    };
+};
+
+export const effect_cc_majaras_rain = (state: GameState, idx: number) => {
+    const newForecast = [...(state.world.forecast || [])];
+    // Colocamos 'rain' al principio para que sea el siguiente tiempo
+    newForecast.unshift('rain');
+    
+    return { 
+        world: { ...state.world, forecast: newForecast },
+        logs: ['🌧️ La asamblea de majaras ha decidido mañana lluvia y mal tiempo.'] 
+    };
+};

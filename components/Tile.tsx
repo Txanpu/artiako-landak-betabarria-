@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { TileData, Player, TileType, GovConfig } from '../types';
-import { PLAYER_EMOJIS } from '../constants';
 import { TileConfig } from '../utils/boardLayout';
 import { TileContent } from './tile/TileContent';
 
@@ -78,7 +77,7 @@ export const Tile: React.FC<TileProps> = ({ tile, players, onClick, config, heat
           <div className="flex flex-wrap justify-center gap-1 p-1">
             {playersHere.map(p => (
               <div key={p.id} className="w-8 h-8 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-sm relative animate-bounce bg-slate-800" style={{ borderColor: p.color, animationDuration: `${1 + p.id * 0.2}s` }} title={p.name}>
-                {PLAYER_EMOJIS[p.id % PLAYER_EMOJIS.length]}
+                {p.avatar}
               </div>
             ))}
           </div>

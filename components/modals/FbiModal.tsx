@@ -71,7 +71,7 @@ export const FbiModal: React.FC<Props> = ({ state, dispatch }) => {
                                     
                                     <div className="flex items-center gap-3 mb-3 border-b border-green-900/30 pb-2">
                                         <div className="w-10 h-10 rounded bg-slate-800 flex items-center justify-center text-xl grayscale group-hover:grayscale-0 transition-all">
-                                            {suspect.gender === 'female' ? '👩' : suspect.gender === 'helicoptero' ? '🚁' : suspect.gender === 'marcianito' ? '👽' : '👨'}
+                                            {suspect.avatar}
                                         </div>
                                         <div>
                                             <div className="text-green-100 font-bold">{suspect.name}</div>

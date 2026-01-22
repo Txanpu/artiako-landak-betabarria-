@@ -13,31 +13,36 @@ interface BoardProps {
 export const Board: React.FC<BoardProps> = ({ state, onTileClick, focusId }) => {
   const tiles = state.tiles;
   const tileRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
+  const isZoomedOut = state.viewFullBoard;
 
   useEffect(() => {
-    if (focusId !== undefined && tileRefs.current[focusId]) {
+    // Only auto-scroll if NOT zoomed out
+    if (!isZoomedOut && focusId !== undefined && tileRefs.current[focusId]) {
       tileRefs.current[focusId]?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
     }
-  }, [focusId]);
+  }, [focusId, isZoomedOut]);
 
   // LOGO POSITION FOR GRID 46 (Adjusted for gap)
-  // Diagonals end at 21 (inclusive). Gap is 22-24. Start again at 25.
-  // We place logo at 20 spanning 7 units (20-26) so it sits underneath the tips 
-  // but the text is centered in the free space (22-24).
   const logoStart = 20; 
   const logoSpan = 7;
 
   return (
-    <div className="w-full h-full bg-[#121212] overflow-auto flex scroll-smooth p-8">
+    <div className={`
+        ${isZoomedOut ? 'fixed inset-0 z-0 bg-[#121212] overflow-hidden' : 'w-full h-full bg-[#121212] overflow-auto scroll-smooth p-8 flex'}
+    `}>
       <div 
-        className="bg-[#121212] shadow-[0_0_150px_rgba(0,0,0,0.9)] relative m-auto"
+        className={`
+            bg-[#121212] shadow-[0_0_150px_rgba(0,0,0,0.9)] transition-all duration-500 ease-in-out
+            ${isZoomedOut ? 'absolute top-1/2 left-1/2 origin-center' : 'relative m-auto'}
+        `}
         style={{ 
           display: 'grid', 
           gridTemplateColumns: `repeat(${GRID_SIZE}, 38px)`, 
           gridTemplateRows: `repeat(${GRID_SIZE}, 38px)`, 
-          gap: '0px', // Zero gap for continuous look
+          gap: '0px', 
           padding: '2px',
-          width: 'fit-content'
+          width: 'fit-content',
+          transform: isZoomedOut ? 'translate(-50%, -50%) scale(0.35)' : 'none',
         }}
       >
         {/* Center Logo Area */}

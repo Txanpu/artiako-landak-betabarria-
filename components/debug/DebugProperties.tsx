@@ -18,6 +18,8 @@ export const DebugProperties: React.FC<Props> = ({ state, dispatch }) => {
         return true;
     });
 
+    const currentPlayer = state.players[state.currentPlayerIndex];
+
     return (
         <div className="space-y-3">
             <div className="flex gap-2">
@@ -70,7 +72,15 @@ export const DebugProperties: React.FC<Props> = ({ state, dispatch }) => {
                                         ))}
                                     </select>
                                 </td>
-                                <td className="p-1 flex gap-1">
+                                <td className="p-1 flex gap-1 items-center">
+                                    <button 
+                                        onClick={() => dispatch({type: 'DEBUG_TELEPORT', payload: {pId: currentPlayer.id, pos: t.id}})}
+                                        className="px-1.5 py-0.5 rounded border bg-blue-100 text-blue-600 border-blue-300 font-bold hover:bg-blue-200"
+                                        title={`Teletransportar a ${currentPlayer.name} aquí`}
+                                    >
+                                        TP
+                                    </button>
+
                                     {t.type === TileType.PROP && (
                                         <>
                                             <button 

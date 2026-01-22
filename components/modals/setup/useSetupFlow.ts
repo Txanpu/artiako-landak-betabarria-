@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Player, INITIAL_MONEY } from '../../../types';
-import { PLAYER_COLORS } from '../../../constants';
+import { PLAYER_COLORS, PLAYER_EMOJIS } from '../../../constants';
 import { assignRoles } from '../../../utils/gameLogic';
 import { RollEntry } from './RollView';
 
@@ -81,16 +81,31 @@ export const useSetupFlow = (onStartGame: (payload: { players: Player[], logs: s
         const newPlayers: Player[] = [];
         let idCounter = 0;
         
+        // Helper to get unique avatar
+        const usedAvatars = new Set<string>();
+        const getUniqueAvatar = (idx: number) => {
+            // Try to get from list, if used, cycle until free
+            let char = PLAYER_EMOJIS[idx % PLAYER_EMOJIS.length];
+            let offset = 0;
+            while (usedAvatars.has(char) && offset < PLAYER_EMOJIS.length) {
+                offset++;
+                char = PLAYER_EMOJIS[(idx + offset) % PLAYER_EMOJIS.length];
+            }
+            usedAvatars.add(char);
+            return char;
+        };
+
         // Humans
         humanConfigs.forEach((cfg, idx) => {
             newPlayers.push({
-                id: idCounter++,
+                id: idCounter,
                 name: cfg.name,
                 money: INITIAL_MONEY,
                 pos: 0,
                 alive: true,
                 jail: 0,
-                color: PLAYER_COLORS[idx % PLAYER_COLORS.length],
+                color: PLAYER_COLORS[idCounter % PLAYER_COLORS.length],
+                avatar: getUniqueAvatar(idCounter),
                 isBot: false,
                 gender: cfg.gender as any,
                 props: [],
@@ -103,21 +118,23 @@ export const useSetupFlow = (onStartGame: (payload: { players: Player[], logs: s
                 offshoreMoney: 0,
                 farlopa: 0,
                 highTurns: 0,
-                genderAbilityCooldown: 0 // New Prop
+                genderAbilityCooldown: 0
             });
+            idCounter++;
         });
 
         // Bots
         const botGenders: ('male'|'female'|'helicoptero'|'marcianito')[] = ['male', 'female', 'helicoptero', 'marcianito'];
         for (let i = 0; i < numBots; i++) { 
             newPlayers.push({ 
-                id: idCounter++, 
+                id: idCounter, 
                 name: `Bot ${i + 1}`, 
                 money: INITIAL_MONEY, 
                 pos: 0, 
                 alive: true, 
                 jail: 0, 
-                color: PLAYER_COLORS[(humanConfigs.length + i) % PLAYER_COLORS.length], 
+                color: PLAYER_COLORS[idCounter % PLAYER_COLORS.length],
+                avatar: getUniqueAvatar(idCounter),
                 isBot: true, 
                 gender: botGenders[Math.floor(Math.random() * botGenders.length)], 
                 props: [], 
@@ -130,8 +147,9 @@ export const useSetupFlow = (onStartGame: (payload: { players: Player[], logs: s
                 offshoreMoney: 0,
                 farlopa: 0,
                 highTurns: 0,
-                genderAbilityCooldown: 0 // New Prop
+                genderAbilityCooldown: 0
             }); 
+            idCounter++;
         }
         
         // 2. Assign Roles BEFORE sorting (Randomized Roles)

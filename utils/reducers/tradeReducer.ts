@@ -15,6 +15,13 @@ export const tradeReducer = (state: GameState, action: any): GameState => {
             if (proposal) return { ...state, trade: proposal, showTradeModal: true };
             return { ...state, showTradeModal: true };
         }
+        case 'OPEN_TRADE_WITH': {
+            const check = canTradeFn(state.gov);
+            if (!check.allowed) {
+                return { ...state, logs: [check.reason || 'Comercio bloqueado.', ...state.logs] };
+            }
+            return { ...state, showTradeModal: true, preselectedTradeTarget: action.payload };
+        }
         case 'ACCEPT_TRADE': {
             if (!state.trade) return state;
             const t = state.trade;
@@ -118,7 +125,7 @@ export const tradeReducer = (state: GameState, action: any): GameState => {
 
             return { ...state, trade: null, showTradeModal: false, logs: [`❌ Trato rechazado.`, ...state.logs] };
         }
-        case 'CLOSE_TRADE': return { ...state, showTradeModal: false };
+        case 'CLOSE_TRADE': return { ...state, showTradeModal: false, preselectedTradeTarget: null };
         default: return state;
     }
 };

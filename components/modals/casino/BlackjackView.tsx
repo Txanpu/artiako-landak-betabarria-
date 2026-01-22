@@ -21,6 +21,7 @@ export const BlackjackView: React.FC<{state: GameState, dispatch: any, player: a
 
     const playStart = () => {
         if (state.casinoPlays >= 3) return;
+        if (player.money < bet) return;
         dispatch({ type: 'START_BLACKJACK', payload: { bet } });
     };
 
@@ -39,9 +40,9 @@ export const BlackjackView: React.FC<{state: GameState, dispatch: any, player: a
                     <button 
                         onClick={playStart} 
                         disabled={state.casinoPlays >= 3 || player.money < bet}
-                        className="px-8 py-3 bg-yellow-500 hover:bg-yellow-400 text-black font-black text-xl rounded shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 transition-all"
+                        className="px-8 py-3 bg-yellow-500 hover:bg-yellow-400 text-black font-black text-lg rounded shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 transition-all uppercase"
                     >
-                        REPARTIR
+                        {player.money < bet ? "FONDOS INSUFICIENTES" : `APOSTAR $${bet} Y REPARTIR`}
                     </button>
                 </div>
                 {state.casinoPlays >= 3 && <div className="text-red-400 font-bold">Límite de jugadas alcanzado.</div>}

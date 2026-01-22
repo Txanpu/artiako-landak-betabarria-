@@ -105,6 +105,8 @@ export interface GameState {
   showGovGuide: boolean; 
   showWeatherModal: boolean; // NEW: Forecast UI Toggle
   showFbiModal: boolean; // NEW: FBI Investigation UI
+  showAvatarSelection: boolean; // NEW: Avatar Switcher
+  showLogsModal: boolean; // NEW: System Logs Modal
   
   // Metrics History for Sparklines
   metrics: Record<number, { turn: number, money: number, netWorth: number }[]>;
@@ -121,6 +123,7 @@ export interface GameState {
   showBankModal: boolean;
   showLoansModal: boolean;
   showTradeModal: boolean;
+  preselectedTradeTarget?: number | null; // NEW: For HUD interaction
   showBalanceModal: boolean; 
   showSlots: boolean; 
   showCasinoModal: boolean;
@@ -128,6 +131,7 @@ export interface GameState {
   casinoGame?: 'blackjack' | 'roulette' | null;
   casinoPlays: number; 
   showHeatmap: boolean; 
+  viewFullBoard?: boolean; // NEW: Zoom Out Feature
   slotsData?: { r1: string, r2: string, r3: string, win: boolean, msg: string, payout: number };
   heatmap: Record<number, number>; 
   

@@ -9,6 +9,7 @@ export interface Player {
   alive: boolean;
   jail: number; 
   color: string;
+  avatar: string; // NEW: Unique visual identifier
   isBot: boolean;
   gender: 'male' | 'female' | 'helicoptero' | 'marcianito';
   role?: 'proxeneta' | 'florentino' | 'fbi' | 'okupa' | 'hacker' | 'civil'; 

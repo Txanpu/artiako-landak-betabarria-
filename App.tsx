@@ -20,7 +20,9 @@ import { QuizModal } from './components/modals/QuizModal';
 import { PokemonModal } from './components/modals/PokemonModal'; 
 import { GovGuideModal } from './components/modals/GovGuideModal'; 
 import { WeatherModal } from './components/modals/WeatherModal'; 
-import { FbiModal } from './components/modals/FbiModal'; // NEW
+import { FbiModal } from './components/modals/FbiModal'; 
+import { AvatarSelectorModal } from './components/modals/AvatarSelectorModal'; 
+import { LogsModal } from './components/modals/LogsModal'; // Added
 import { GameState } from './types';
 import { createInitialState, makeHistory, makeWatchdog } from './utils/gameLogic';
 import { gameReducer } from './utils/gameReducer';
@@ -66,7 +68,7 @@ const App: React.FC = () => {
         
         {/* New Floating HUD (Replaces old weather/gov displays) */}
         <GameHUD state={state} dispatch={dispatch} />
-
+        
         <div className="absolute inset-0 flex items-center justify-center p-2 md:p-8 z-0">
             <Board 
                 state={state} 
@@ -116,6 +118,8 @@ const App: React.FC = () => {
       <GovGuideModal state={state} dispatch={dispatch} />
       <WeatherModal state={state} dispatch={dispatch} />
       <FbiModal state={state} dispatch={dispatch} />
+      <AvatarSelectorModal state={state} dispatch={dispatch} />
+      <LogsModal state={state} dispatch={dispatch} />
 
       {setupOpen && <SetupModal onStartGame={(p) => { dispatch({type:'START_GAME', payload: p}); setSetupOpen(false); }} />}
       

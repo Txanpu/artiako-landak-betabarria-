@@ -27,7 +27,7 @@ export const ActionPanel: React.FC<Props> = ({ state, player, onRoll, isRolling,
     const isNight = state.world.isNight;
     const isOzollo = currentTile.name.includes('Ozollo');
     const isMarko = currentTile.name.includes('Marko Pollo');
-    const isFerry = currentTile.subtype === 'ferry';
+    const isFerry = currentTile?.subtype === 'ferry';
     
     const canBuyFarlopa = isNight && (isMarko || isFerry);
     const canGetFreeFarlopa = isNight && isOzollo;
@@ -126,7 +126,7 @@ export const ActionPanel: React.FC<Props> = ({ state, player, onRoll, isRolling,
 
             {/* SECONDARY ACTIONS (Icons) */}
             
-            {/* NEW: GENDER ABILITY BUTTON */}
+            {/* GENDER ABILITY BUTTON */}
             <button 
                 onClick={() => dispatch({ type: 'TRIGGER_GENDER_ABILITY' })}
                 disabled={!canUseAbility || isElectionOpen}
@@ -149,9 +149,13 @@ export const ActionPanel: React.FC<Props> = ({ state, player, onRoll, isRolling,
                 )}
             </button>
 
+            <IconButton icon={state.viewFullBoard ? "🔍" : "🗺️"} label="Mapa" onClick={() => dispatch({type: 'TOGGLE_FULL_BOARD'})} />
             <IconButton icon="🤝" label="Trade" onClick={() => dispatch({type: 'PROPOSE_TRADE'})} />
             <IconButton icon="🏦" label="Banco" onClick={() => dispatch({type: 'TOGGLE_BANK_MODAL'})} />
             <IconButton icon="📈" label="Stats" onClick={() => dispatch({type: 'TOGGLE_BALANCE_MODAL'})} />
+            
+            {/* NEW LOGS BUTTON */}
+            <IconButton icon="📜" label="Logs" onClick={() => dispatch({type: 'TOGGLE_LOGS_MODAL'})} />
             
             {/* Dark Web Button (Hacker) */}
             {isHacker && (
@@ -203,6 +207,7 @@ const IconButton = ({ icon, label, onClick }: any) => (
     <button 
         onClick={onClick}
         className="bg-slate-800 hover:bg-slate-700 border border-slate-600 hover:border-slate-500 text-white rounded-lg p-2 flex flex-col items-center justify-center gap-0.5 transition-all shadow-sm active:scale-95"
+        title={label}
     >
         <span className="text-lg leading-none">{icon}</span>
     </button>

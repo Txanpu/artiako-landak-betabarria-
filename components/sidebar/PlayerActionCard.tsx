@@ -35,12 +35,13 @@ export const PlayerActionCard: React.FC<Props> = ({ player, isRolling, displayDi
                 {/* Header: Avatar & Name */}
                 <div className="flex items-center justify-between mb-4 relative z-10">
                     <div className="flex items-center gap-3">
-                        <div className="relative">
-                            <div className="w-10 h-10 rounded-lg shadow-lg flex items-center justify-center text-lg border-2" style={{backgroundColor: '#1e293b', borderColor: player.color}}>
-                                <span className="filter drop-shadow-md">
-                                    {player.gender === 'helicoptero' ? '🚁' : player.gender === 'marcianito' ? '👽' : player.gender === 'female' ? '👩' : '👨'}
+                        <div className="relative group cursor-pointer" onClick={() => dispatch({type: 'TOGGLE_AVATAR_SELECTION'})} title="Cambiar Icono">
+                            <div className="w-10 h-10 rounded-lg shadow-lg flex items-center justify-center text-lg border-2 group-hover:border-white transition-colors" style={{backgroundColor: '#1e293b', borderColor: player.color}}>
+                                <span className="filter drop-shadow-md group-hover:scale-110 transition-transform">
+                                    {player.avatar}
                                 </span>
                             </div>
+                            <div className="absolute -top-1 -right-1 bg-white text-black text-[8px] rounded-full w-3 h-3 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity font-bold">✎</div>
                             {player.jail > 0 && (
                                 <div className="absolute -bottom-1 -right-1 bg-red-600 text-white text-[8px] px-1 rounded border border-black font-bold animate-pulse">JAIL</div>
                             )}

@@ -15,6 +15,24 @@ import { pokemonReducer } from './reducers/minigames/pokemonReducer'; // Added
 export const gameReducer = (state: GameState, action: any): GameState => {
     let nextState = state;
 
+    // --- AVATAR SELECTION ---
+    if (action.type === 'TOGGLE_AVATAR_SELECTION') {
+        return { ...state, showAvatarSelection: !state.showAvatarSelection };
+    }
+    if (action.type === 'CHANGE_AVATAR') {
+        const { pId, newAvatar } = action.payload;
+        // Verify uniqueness
+        const isTaken = state.players.some(p => p.avatar === newAvatar && p.id !== pId);
+        if (isTaken) return state;
+
+        const newPlayers = state.players.map(p => {
+            if (p.id === pId) return { ...p, avatar: newAvatar };
+            return p;
+        });
+        
+        return { ...state, players: newPlayers, showAvatarSelection: false };
+    }
+
     // 1. Core Lifecycle & Debug
     nextState = coreReducer(nextState, action);
     if (nextState !== state) return nextState;

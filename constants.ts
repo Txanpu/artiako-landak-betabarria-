@@ -48,6 +48,25 @@ export const PLAYER_COLORS = ['#ef4444', '#22c55e', '#3b82f6', '#f59e0b', '#a855
 
 export const PLAYER_EMOJIS = ['😃', '🤖', '🦊', '🐸', '🐼', '🐵', '🦄', '🐲'];
 
+export const BASQUE_AVATARS = [
+    { id: 'txapela', icon: '🧢', name: 'La Txapela', desc: 'El clásico, no puede faltar.' },
+    { id: 'katxi', icon: '🥤', name: 'Katxi Kalimotxo', desc: 'Vaso maceta rebosante.' },
+    { id: 'piedra', icon: '🪨', name: 'Harrijasotzaile', desc: 'Piedra rectangular enorme.' },
+    { id: 'chuleton', icon: '🥩', name: 'El Chuletón', desc: 'Con hueso y sangrando.' },
+    { id: 'trainera', icon: '🚣', name: 'La Trainera', desc: 'A remar fuerte.' },
+    { id: 'lauburu', icon: '☸️', name: 'El Lauburu', desc: 'Toque tradicional vasco.' },
+    { id: 'baldosa', icon: '🌼', name: 'Baldosa Bilbao', desc: 'La flor de la villa.' },
+    { id: 'eguzkilore', icon: '🌻', name: 'Eguzkilore', desc: 'Protección contra espíritus.' },
+    { id: 'marijaia', icon: '🙆‍♀️', name: 'Marijaia', desc: '¡Brazos arriba Aste Nagusia!' },
+    { id: 'celedon', icon: '☂️', name: 'Celedón', desc: 'Bajando con el paraguas.' },
+    { id: 'eskopeta', icon: '🔫', name: 'Eskopeta', desc: 'Cuidadito conmigo.' },
+    { id: 'demonio', icon: '👹', name: 'Demonio', desc: 'Puro Akelarre.' },
+    { id: 'robot', icon: '🤖', name: 'Teknologia', desc: 'Parque Tecnológico.' },
+    { id: 'dragon', icon: '🐲', name: 'Herensuge', desc: 'Dragón mitológico.' },
+    { id: 'oveja', icon: '🐑', name: 'Latxa', desc: 'Oveja del país.' },
+    { id: 'kaiku', icon: '🥛', name: 'Kaiku', desc: 'Leche buena.' }
+];
+
 export const FUNNY: Record<string, string> = {
   start:    'salidas como tu madre.',
   tax:      'dinerito pal politiko',

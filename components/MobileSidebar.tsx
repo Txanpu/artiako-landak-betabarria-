@@ -86,8 +86,8 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({
                             {/* 2. PLAYER COMPACT CARD */}
                             <div className="bg-slate-800/50 rounded-lg p-2 border border-slate-700 flex justify-between items-center relative overflow-hidden mt-2">
                                 <div className="flex items-center gap-2 z-10">
-                                    <div className="w-8 h-8 rounded bg-slate-700 flex items-center justify-center text-lg shadow-inner" style={{borderColor: currentPlayer.color, borderWidth: '1px'}}>
-                                        {currentPlayer.gender === 'helicoptero' ? '🚁' : currentPlayer.gender === 'marcianito' ? '👽' : currentPlayer.gender === 'female' ? '👩' : '👨'}
+                                    <div className="w-8 h-8 rounded bg-slate-700 flex items-center justify-center text-lg shadow-inner cursor-pointer hover:border-white border border-transparent transition-colors" style={{borderColor: currentPlayer.color}} onClick={() => dispatch({type: 'TOGGLE_AVATAR_SELECTION'})}>
+                                        {currentPlayer.avatar}
                                     </div>
                                     <div className="flex flex-col">
                                         <span className="text-white font-bold text-xs truncate max-w-[100px]">{currentPlayer.name}</span>
@@ -184,6 +184,7 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({
                                 </div>
 
                                 {/* SECONDARY ICONS ROW */}
+                                <button onClick={() => dispatch({type:'TOGGLE_FULL_BOARD'})} className={`p-2 rounded text-lg ${state.viewFullBoard ? 'bg-indigo-600 text-white' : 'bg-slate-800 hover:bg-slate-700'}`} title="Mapa">{state.viewFullBoard ? '🔍' : '🗺️'}</button>
                                 <button onClick={() => dispatch({type:'PROPOSE_TRADE'})} className="bg-slate-800 p-2 rounded text-lg hover:bg-slate-700" title="Trade">🤝</button>
                                 <button onClick={() => dispatch({type:'TOGGLE_BANK_MODAL'})} className="bg-slate-800 p-2 rounded text-lg hover:bg-slate-700" title="Banco">🏦</button>
                                 <button onClick={() => dispatch({type:'TOGGLE_BALANCE_MODAL'})} className="bg-slate-800 p-2 rounded text-lg hover:bg-slate-700" title="Stats">📈</button>
@@ -193,23 +194,6 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({
                     ) : (
                         <div className="text-center text-gray-500 text-xs py-4">Cargando...</div>
                     )}
-
-                    {/* 5. COMPACT RANKING */}
-                    <div className="border-t border-slate-800 pt-2">
-                        <div className="text-[10px] uppercase font-bold text-slate-500 mb-1">Jugadores</div>
-                        <div className="space-y-1">
-                            {state.players.map(p => (
-                                <div key={p.id} className={`flex justify-between items-center text-[10px] p-1 rounded ${p.id === state.currentPlayerIndex ? 'bg-slate-800 text-white font-bold' : 'text-gray-400'}`}>
-                                    <div className="flex items-center gap-1">
-                                        <div className="w-2 h-2 rounded-full" style={{backgroundColor: p.color}}></div>
-                                        <span className="truncate max-w-[80px]">{p.name}</span>
-                                        {!p.alive && <span>💀</span>}
-                                    </div>
-                                    <span className="font-mono">{formatMoney(p.money)}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
                 </div>
 
                 {/* 6. LOGS FOOTER */}

@@ -64,8 +64,10 @@ export const createInitialState = (): GameState => {
       election: null,
       showDarkWeb: false,
       showGovGuide: false, 
-      showWeatherModal: false, // Initial Value
-      showFbiModal: false, // NEW
+      showWeatherModal: false, 
+      showFbiModal: false, 
+      showAvatarSelection: false, 
+      showLogsModal: false, // NEW
       
       // UI Metrics
       metrics: {},
@@ -73,6 +75,7 @@ export const createInitialState = (): GameState => {
       showBankModal: false,
       showLoansModal: false,
       showTradeModal: false,
+      preselectedTradeTarget: null, // NEW
       showBalanceModal: false,
       showSlots: false,
       showCasinoModal: false,
@@ -80,6 +83,7 @@ export const createInitialState = (): GameState => {
       casinoGame: null,
       casinoPlays: 0,
       showHeatmap: false,
+      viewFullBoard: false, // Default zoom level normal
       activeEvent: null,
       showGreyhounds: false,
       greyhounds: [],

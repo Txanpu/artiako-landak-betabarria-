@@ -9,7 +9,8 @@ interface Props {
 }
 
 export const TradeProposalForm: React.FC<Props> = ({ state, currentPlayer, dispatch }) => {
-    const [targetId, setTargetId] = useState<number>(-1);
+    // Initialize with preselected target if available
+    const [targetId, setTargetId] = useState<number>(state.preselectedTradeTarget ?? -1);
     const [offerMoney, setOfferMoney] = useState(0);
     const [offerDrugs, setOfferDrugs] = useState(0);
     const [reqMoney, setReqMoney] = useState(0);

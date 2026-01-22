@@ -44,11 +44,14 @@ export const tickWorld = (state: GameState): Partial<GameState> => {
         if (weather === 'sunny' && state.world.weather === 'rain') logs.push('🌤️ Escampa. Sale el sol.');
     }
 
+    // New Day calculation: Increment only on transition from Night -> Day (Sunrise)
+    const isNewDay = !isNight && prevNight;
+
     return {
         world: {
             isNight,
             weather,
-            dayCount: state.world.dayCount + (isNight && !prevNight ? 1 : 0),
+            dayCount: state.world.dayCount + (isNewDay ? 1 : 0),
             forecast
         },
         logs: [...logs, ...state.logs] // Prepend new logs

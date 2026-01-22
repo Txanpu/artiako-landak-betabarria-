@@ -15,6 +15,10 @@ export const debugReducer = (state: GameState, action: any): GameState => {
             return { ...state, showGovGuide: !state.showGovGuide };
         case 'TOGGLE_WEATHER_MODAL': 
             return { ...state, showWeatherModal: !state.showWeatherModal };
+        case 'TOGGLE_FULL_BOARD':
+            return { ...state, viewFullBoard: !state.viewFullBoard };
+        case 'TOGGLE_LOGS_MODAL': // NEW
+            return { ...state, showLogsModal: !state.showLogsModal };
         case 'CLOSE_EVENT': 
             return { ...state, activeEvent: null };
 

@@ -7,6 +7,17 @@ interface Props {
     dispatch: React.Dispatch<any>;
 }
 
+const TP_LOCATIONS = [
+    { name: 'Salida', id: 0 },
+    { name: 'Cárcel', id: 16 },
+    { name: 'Parkie (N)', id: 32 },
+    { name: 'Ir a Cárcel', id: 48 },
+    { name: 'Banca', id: 50 },
+    { name: 'Bird Center', id: 24 },
+    { name: 'Fiore', id: 31 },
+    { name: 'Quiz Maldini', id: 77 },
+];
+
 export const DebugPlayers: React.FC<Props> = ({ state, dispatch }) => {
     return (
         <div className="space-y-4 max-h-80 overflow-y-auto pr-1">
@@ -30,9 +41,9 @@ export const DebugPlayers: React.FC<Props> = ({ state, dispatch }) => {
                             </select>
                             <button 
                                 onClick={() => dispatch({type: 'DEBUG_TELEPORT', payload: {pId: p.id, pos: 10}})} 
-                                className="text-[10px] bg-slate-200 hover:bg-slate-300 px-1 rounded"
+                                className="text-[10px] bg-red-100 text-red-600 hover:bg-red-200 px-1 rounded font-bold"
                             >
-                                Jail
+                                JAIL
                             </button>
                         </div>
                     </div>
@@ -52,13 +63,29 @@ export const DebugPlayers: React.FC<Props> = ({ state, dispatch }) => {
                             </div>
                         </div>
                         <div>
-                            <label className="block text-[9px] text-gray-500">Posición</label>
-                            <input 
-                                type="number" 
-                                value={p.pos} 
-                                onChange={(e) => dispatch({type: 'DEBUG_TELEPORT', payload: {pId: p.id, pos: parseInt(e.target.value)}})}
-                                className="w-full border rounded px-1"
-                            />
+                            <label className="block text-[9px] text-gray-500">Posición (TP)</label>
+                            <div className="flex gap-1">
+                                <input 
+                                    type="number" 
+                                    value={p.pos} 
+                                    onChange={(e) => dispatch({type: 'DEBUG_TELEPORT', payload: {pId: p.id, pos: parseInt(e.target.value)}})}
+                                    className="w-12 border rounded px-1"
+                                />
+                                <select 
+                                    className="flex-1 border rounded px-1 text-[9px] bg-white"
+                                    onChange={(e) => {
+                                        if (e.target.value !== "") {
+                                            dispatch({type: 'DEBUG_TELEPORT', payload: {pId: p.id, pos: parseInt(e.target.value)}});
+                                            e.target.value = ""; // Reset
+                                        }
+                                    }}
+                                >
+                                    <option value="">Ir a...</option>
+                                    {TP_LOCATIONS.map(loc => (
+                                        <option key={loc.id} value={loc.id}>{loc.name}</option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
                     </div>
 

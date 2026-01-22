@@ -169,3 +169,22 @@ export const effect_ch_gotojail = (state: GameState, idx: number) => {
     p[idx] = player;
     return { players: p, rolled: false, logs: [`👮 ${player.name} a la cárcel por carta Suerte.`] };
 };
+
+// --- NUEVA LÓGICA CAMBIO DE SEXO ---
+export const effect_ch_gender_swap = (state: GameState, idx: number) => {
+    const p = [...state.players];
+    const player = { ...p[idx] };
+    
+    const options: ('male'|'female'|'helicoptero'|'marcianito')[] = ['male', 'female', 'helicoptero', 'marcianito'];
+    const newGender = options[Math.floor(Math.random() * options.length)];
+    
+    player.gender = newGender;
+    
+    const icon = newGender === 'male' ? '👨' : newGender === 'female' ? '👩' : newGender === 'helicoptero' ? '🚁' : '👽';
+    
+    p[idx] = player;
+    return { 
+        players: p, 
+        logs: [`⚧️ ¡Crisis de Identidad! ${player.name} ahora es ${newGender.toUpperCase()} ${icon}.`] 
+    };
+};
