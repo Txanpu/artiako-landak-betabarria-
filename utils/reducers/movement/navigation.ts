@@ -62,22 +62,21 @@ export const navigationReducer = (state: GameState, action: any): GameState => {
                     } else if (shouldBlockSalary(state, p.id)) {
                         salaryLog = 'Techo de cristal: salario bloqueado.';
                     } else if (salaryAmount > 0) {
-                        if (state.estadoMoney >= salaryAmount || state.gov === 'authoritarian') {
-                            // Authoritarian prints money if needed
-                            if (state.gov === 'authoritarian' && state.estadoMoney < salaryAmount) {
-                                newMoney += 1000; // Print buffer
-                                logs.push('🖨️ Banco Central Autoritario imprime dinero para pagar salarios.');
-                            }
+                        // UPDATED LOGIC: Money Printing for Left/Authoritarian
+                        const canPrintMoney = state.gov === 'left' || state.gov === 'authoritarian';
+                        
+                        if (canPrintMoney && newMoney < salaryAmount) {
+                            const diff = salaryAmount - newMoney;
+                            newMoney += diff; // Print to cover
+                            logs.push(`🖨️ Banco Central (${state.gov.toUpperCase()}) imprime dinero para salarios.`);
+                        }
 
-                            if (newMoney >= salaryAmount) {
-                                p.money += salaryAmount;
-                                newMoney -= salaryAmount;
-                                salaryLog = `💰 Salario ${state.gov}: ${p.name} recibe ${formatMoney(salaryAmount)}.`;
-                            } else {
-                                salaryLog = `💸 Estado sin fondos (${formatMoney(state.estadoMoney)}) para salario.`;
-                            }
+                        if (newMoney >= salaryAmount) {
+                            p.money += salaryAmount;
+                            newMoney -= salaryAmount;
+                            salaryLog = `💰 Salario ${state.gov}: ${p.name} recibe ${formatMoney(salaryAmount)}.`;
                         } else {
-                            salaryLog = `💸 Estado sin fondos para salario.`;
+                            salaryLog = `💸 Estado sin fondos (${formatMoney(newMoney)}) para salario.`;
                         }
                     } else {
                         if (state.gov === 'libertarian') salaryLog = '🏛️ Gobierno Libertario: No hay salario público.';
@@ -97,6 +96,7 @@ export const navigationReducer = (state: GameState, action: any): GameState => {
 
                         if (transportCount > 0) {
                             const tax = transportCount * 10;
+                            // Only pay if funds available (State doesn't print for this usually, but let's stick to base logic)
                             if (newMoney >= tax) {
                                 newMoney -= tax;
                                 const updatedOwner = (idx === pIdx) ? p : { ...newPs[idx] }; // Use p if it's current player
@@ -158,18 +158,19 @@ export const navigationReducer = (state: GameState, action: any): GameState => {
                 } else if (shouldBlockSalary(state, p.id)) {
                     salaryLog = 'Techo de cristal: salario bloqueado.';
                 } else if (salaryAmount > 0) {
-                     if (state.estadoMoney >= salaryAmount || state.gov === 'authoritarian') {
-                        if (state.gov === 'authoritarian' && state.estadoMoney < salaryAmount) {
-                            newMoney += 1000;
-                            logs.push('🖨️ Banco Central Autoritario imprime dinero.');
-                        }
-                        if (newMoney >= salaryAmount) {
-                            p.money += salaryAmount;
-                            newMoney -= salaryAmount;
-                            salaryLog = `💰 Salario ${state.gov}: ${p.name} recibe ${formatMoney(salaryAmount)}.`;
-                        } else {
-                            salaryLog = `💸 Estado sin fondos.`;
-                        }
+                     // UPDATED LOGIC
+                     const canPrintMoney = state.gov === 'left' || state.gov === 'authoritarian';
+                     
+                     if (canPrintMoney && newMoney < salaryAmount) {
+                         const diff = salaryAmount - newMoney;
+                         newMoney += diff;
+                         logs.push(`🖨️ Banco Central (${state.gov.toUpperCase()}) imprime dinero para salarios.`);
+                     }
+
+                     if (newMoney >= salaryAmount) {
+                        p.money += salaryAmount;
+                        newMoney -= salaryAmount;
+                        salaryLog = `💰 Salario ${state.gov}: ${p.name} recibe ${formatMoney(salaryAmount)}.`;
                     } else {
                         salaryLog = `💸 Estado sin fondos.`;
                     }

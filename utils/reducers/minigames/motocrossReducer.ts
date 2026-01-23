@@ -5,11 +5,24 @@ import { formatMoney } from '../../gameLogic';
 export const motocrossReducer = (state: GameState, action: any): GameState => {
     switch (action.type) {
         case 'START_MOTOCROSS': {
+            const pIdx = state.currentPlayerIndex;
+            const player = state.players[pIdx];
+
+            if (player.playedMinigames?.includes('motocross')) {
+                return { ...state, logs: ['🚫 Ya has competido en Motocross este turno.', ...state.logs] };
+            }
+
             if (state.gov === 'left') {
                 return { ...state, logs: ['🚫 Motocross prohibido por normas medioambientales (Gobierno Izquierdas).', ...state.logs] };
             }
+
+            // Mark as played
+            const newPlayers = [...state.players];
+            newPlayers[pIdx] = { ...player, playedMinigames: [...(player.playedMinigames || []), 'motocross'] };
+
             return {
                 ...state,
+                players: newPlayers,
                 selectedTileId: null, // Close property modal
                 motocross: {
                     isOpen: true,

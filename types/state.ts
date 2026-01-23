@@ -62,6 +62,27 @@ export interface MotocrossState {
     reward: number;
 }
 
+export interface BoatRaceState {
+    isOpen: boolean;
+    phase: 'playing' | 'crashed' | 'finished';
+    score: number;
+    highScore: number;
+}
+
+export interface SkateState {
+    isOpen: boolean;
+    phase: 'playing' | 'crashed';
+    score: number;
+    highScore: number;
+}
+
+export interface BirdHuntState {
+    isOpen: boolean;
+    phase: 'playing' | 'finished';
+    score: number;
+    highScore: number;
+}
+
 // --- NEW POLYMARKET TYPES ---
 export interface MarketAssets {
     money: number;
@@ -110,6 +131,9 @@ export interface GameState {
   quiz?: QuizState | null; 
   pokemon?: PokemonState | null; 
   motocross?: MotocrossState | null; 
+  boatRace?: BoatRaceState | null; 
+  skate?: SkateState | null; 
+  birdHunt?: BirdHuntState | null; // NEW
   
   // Economy & Gov
   estadoMoney: number;

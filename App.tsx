@@ -19,7 +19,10 @@ import { ElectionModal } from './components/modals/ElectionModal';
 import { QuizModal } from './components/modals/QuizModal';
 import { PokemonModal } from './components/modals/PokemonModal'; 
 import { MotocrossModal } from './components/modals/minigames/MotocrossModal'; 
-import { PolymarketModal } from './components/modals/PolymarketModal'; // Added
+import { PolymarketModal } from './components/modals/PolymarketModal'; 
+import { BoatRaceModal } from './components/modals/minigames/BoatRaceModal'; 
+import { SkateModal } from './components/modals/minigames/SkateModal';
+import { BirdHuntModal } from './components/modals/minigames/BirdHuntModal'; // Added
 import { GovGuideModal } from './components/modals/GovGuideModal'; 
 import { WeatherModal } from './components/modals/WeatherModal'; 
 import { FbiModal } from './components/modals/FbiModal'; 
@@ -31,8 +34,8 @@ import { gameReducer } from './utils/gameReducer';
 import { useGameBots } from './hooks/useGameBots';
 import { useDiceAnimation } from './hooks/useDiceAnimation';
 
-// Bumped to v8 to force reset
-const SAVE_KEY = 'artiako_landak_save_v8';
+// Bumped to v9 to force reset
+const SAVE_KEY = 'artiako_landak_save_v9';
 
 const App: React.FC = () => {
   const [state, dispatch] = useReducer(gameReducer, createInitialState());
@@ -120,6 +123,9 @@ const App: React.FC = () => {
       <QuizModal state={state} dispatch={dispatch} /> 
       <PokemonModal state={state} dispatch={dispatch} />
       <MotocrossModal state={state} dispatch={dispatch} />
+      <BoatRaceModal state={state} dispatch={dispatch} />
+      <SkateModal state={state} dispatch={dispatch} />
+      <BirdHuntModal state={state} dispatch={dispatch} /> 
       <PolymarketModal state={state} dispatch={dispatch} /> 
       <GovGuideModal state={state} dispatch={dispatch} />
       <WeatherModal state={state} dispatch={dispatch} />

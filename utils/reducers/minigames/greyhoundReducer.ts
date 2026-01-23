@@ -5,12 +5,24 @@ import { formatMoney, initGreyhounds } from '../../gameLogic';
 export const greyhoundReducer = (state: GameState, action: any): GameState => {
     switch (action.type) {
         case 'START_GREYHOUNDS': {
+            const pIdx = state.currentPlayerIndex;
+            const player = state.players[pIdx];
+
+            if (player.playedMinigames?.includes('greyhounds')) {
+                return { ...state, logs: ['🚫 Ya has apostado en los Galgos este turno.', ...state.logs] };
+            }
+
             if (state.gov === 'left') {
                 return { ...state, logs: ['🚫 Carreras prohibidas por derechos de los animales.', ...state.logs] };
             }
 
+            // Mark as played
+            const newPlayers = [...state.players];
+            newPlayers[pIdx] = { ...player, playedMinigames: [...(player.playedMinigames || []), 'greyhounds'] };
+
             return {
                 ...state,
+                players: newPlayers,
                 showGreyhounds: true,
                 greyhounds: initGreyhounds(),
                 greyhoundPot: 0,

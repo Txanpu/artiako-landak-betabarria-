@@ -33,4 +33,7 @@ export interface Player {
   
   // New Gender Mechanics
   genderAbilityCooldown: number; // Turns until ability can be used again
+  
+  // General Rules
+  playedMinigames?: string[]; // Track which minigames played this turn
 }

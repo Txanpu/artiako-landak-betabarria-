@@ -19,13 +19,25 @@ export const minigameReducer = (state: GameState, action: any): GameState => {
 
     switch (action.type) {
         case 'PLAY_CASINO': {
+            const pIdx = state.currentPlayerIndex;
+            const player = state.players[pIdx];
+
+            if (player.playedMinigames?.includes('casino')) {
+                return { ...state, showCasinoModal: false, logs: ['🚫 Ya has jugado en el Casino este turno. Vuelve luego.', ...state.logs] };
+            }
+
             if (state.gov === 'left') return { ...state, showCasinoModal: false, logs: ['🚫 El Gobierno de Izquierdas ha clausurado los Casinos.', ...state.logs] };
 
             const { game } = action.payload; 
             
+            // Mark as played
+            const newPlayers = [...state.players];
+            newPlayers[pIdx] = { ...player, playedMinigames: [...(player.playedMinigames || []), 'casino'] };
+
             // Open Interactive Modal
             return { 
                 ...state, 
+                players: newPlayers,
                 showCasinoModal: true, 
                 casinoGame: game,
                 // Reset internal minigame states to start fresh
@@ -44,9 +56,23 @@ export const minigameReducer = (state: GameState, action: any): GameState => {
         
         case 'CLOSE_CASINO': return { ...state, showCasinoModal: false, rouletteState: undefined, blackjackState: undefined };
         case 'CLOSE_SLOTS': return { ...state, showSlotsModal: false, slotsData: undefined };
-        case 'OPEN_SLOTS_MODAL': 
+        
+        case 'OPEN_SLOTS_MODAL': {
+            const pIdx = state.currentPlayerIndex;
+            const player = state.players[pIdx];
+
+            if (player.playedMinigames?.includes('slots')) {
+                return { ...state, logs: ['🚫 Ya has jugado a las Tragaperras este turno.', ...state.logs] };
+            }
+
             if (state.gov === 'left') return { ...state, logs: ['🚫 Las Tragaperras están prohibidas por el Gobierno.', ...state.logs] };
-            return { ...state, showSlotsModal: true };
+            
+            // Mark as played
+            const newPlayers = [...state.players];
+            newPlayers[pIdx] = { ...player, playedMinigames: [...(player.playedMinigames || []), 'slots'] };
+
+            return { ...state, players: newPlayers, showSlotsModal: true };
+        }
 
         default: return state;
     }

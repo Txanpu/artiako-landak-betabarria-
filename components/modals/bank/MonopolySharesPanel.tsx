@@ -24,7 +24,7 @@ export const MonopolySharesPanel: React.FC<Props> = ({ state, dispatch }) => {
 
     // Identify Potential Monopolies (Owned fully by me, not yet companies)
     const potentialMonopolies: string[] = [];
-    const colors = [...new Set(state.tiles.filter(t => t.color).map(t => t.color!))];
+    const colors: string[] = Array.from(new Set(state.tiles.filter(t => t.color).map(t => t.color as string)));
     
     colors.forEach(c => {
         const group = getColorGroup(state.tiles, c);

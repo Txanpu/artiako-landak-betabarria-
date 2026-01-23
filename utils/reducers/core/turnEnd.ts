@@ -79,6 +79,9 @@ export const resolveEndTurn = (state: GameState): GameState => {
         finalLogs = finalLogs.slice(0, 60);
     }
 
+    // --- RESET MINIGAME LIMITS FOR NEXT PLAYER ---
+    finalPlayers[nextIdx] = { ...finalPlayers[nextIdx], playedMinigames: [] };
+
     let finalStateData = {
         ...state,
         ...govUpdate,
@@ -90,7 +93,8 @@ export const resolveEndTurn = (state: GameState): GameState => {
         metrics: newMetrics,
         casinoPlays: 0,
         estadoMoney: currentEstadoMoney,
-        world: state.world
+        world: state.world,
+        players: finalPlayers // Update players with reset flag
     };
 
     if (randomEventUpdate) {

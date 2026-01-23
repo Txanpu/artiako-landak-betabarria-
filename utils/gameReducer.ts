@@ -12,7 +12,10 @@ import { electionReducer } from './reducers/electionReducer';
 import { specialReducer } from './reducers/specialReducer';
 import { pokemonReducer } from './reducers/minigames/pokemonReducer'; 
 import { motocrossReducer } from './reducers/minigames/motocrossReducer'; 
-import { polymarketReducer } from './reducers/minigames/polymarketReducer'; // Added
+import { polymarketReducer } from './reducers/minigames/polymarketReducer'; 
+import { boatRaceReducer } from './reducers/minigames/boatRaceReducer';
+import { skateReducer } from './reducers/minigames/skateReducer'; 
+import { birdHuntReducer } from './reducers/minigames/birdHuntReducer'; // Added
 
 export const gameReducer = (state: GameState, action: any): GameState => {
     let nextState = state;
@@ -66,7 +69,22 @@ export const gameReducer = (state: GameState, action: any): GameState => {
         return polymarketReducer(state, action);
     }
 
-    // 8. Movement
+    // 8. Boat Race (Intercepts)
+    if (action.type.startsWith('BOAT_') || action.type === 'START_BOAT_RACE' || action.type === 'CLOSE_BOAT_RACE') {
+        return boatRaceReducer(state, action);
+    }
+
+    // 9. Skate (Intercepts)
+    if (action.type.startsWith('SKATE_') || action.type === 'START_SKATE' || action.type === 'CLOSE_SKATE') {
+        return skateReducer(state, action);
+    }
+
+    // 10. Bird Hunt (Intercepts)
+    if (action.type.startsWith('BIRD_') || action.type === 'START_BIRD_HUNT' || action.type === 'CLOSE_BIRD_HUNT') {
+        return birdHuntReducer(state, action);
+    }
+
+    // 11. Movement
     // IMPORTANT: 'SELECT_TILE' interaction logic
     if (action.type === 'SELECT_TILE' && state.pendingMoves > 0 && state.movementOptions.includes(action.payload)) {
         return movementReducer(state, { type: 'SELECT_MOVE', payload: action.payload });
@@ -74,23 +92,23 @@ export const gameReducer = (state: GameState, action: any): GameState => {
     nextState = movementReducer(state, action);
     if (nextState !== state) return nextState;
 
-    // 9. Property Management
+    // 12. Property Management
     nextState = propertyReducer(state, action);
     if (nextState !== state) return nextState;
 
-    // 10. Auction
+    // 13. Auction
     nextState = auctionReducer(state, action);
     if (nextState !== state) return nextState;
 
-    // 11. Trade
+    // 14. Trade
     nextState = tradeReducer(state, action);
     if (nextState !== state) return nextState;
 
-    // 12. Finance (Bank, Loans, Market)
+    // 15. Finance (Bank, Loans, Market)
     nextState = financeReducer(state, action);
     if (nextState !== state) return nextState;
 
-    // 13. Minigames (Casino, Quiz, Greyhounds)
+    // 16. Minigames (Casino, Quiz, Greyhounds)
     nextState = minigameReducer(state, action);
     if (nextState !== state) return nextState;
 

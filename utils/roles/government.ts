@@ -249,6 +249,15 @@ export const handleGovernmentTick = (state: GameState): Partial<GameState> => {
         }
     }
 
+    // --- STATE BANKRUPTCY CHECK (New) ---
+    if (newEstadoMoney < 0) {
+        newState.gov = 'anarchy';
+        newState.currentGovConfig = GOV_CONFIGS['anarchy'];
+        newState.govTurnsLeft = 7;
+        newEstadoMoney = 0;
+        govLogs.push("💥 ¡QUIEBRA DEL ESTADO! Las arcas están en negativo. Cae el Gobierno y reina la ANARQUÍA.");
+    }
+
     return { 
         ...newState, 
         players: updatedPlayers,

@@ -12,7 +12,7 @@ interface Props {
     close: () => void;
 }
 
-export const MotocrossEntryView: React.FC<Props> = ({ state, dispatch, t, currentPlayer, close }) => {
+export const SkateEntryView: React.FC<Props> = ({ state, dispatch, t, currentPlayer, close }) => {
     const isOwner = t.owner === currentPlayer?.id;
     const isOwnerlessProp = t.owner === null;
     const isAtLocation = currentPlayer && currentPlayer.pos === t.id;
@@ -28,13 +28,13 @@ export const MotocrossEntryView: React.FC<Props> = ({ state, dispatch, t, curren
     const unmortgageCost = Math.floor(mortgageValue * 1.1);
 
     return (
-        <div className="bg-[#1e1b4b] text-white w-full max-w-sm rounded-xl overflow-hidden shadow-[0_0_50px_rgba(99,102,241,0.5)] border-4 border-indigo-500 animate-in zoom-in-95 relative max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="bg-[#111827] text-white w-full max-w-sm rounded-xl overflow-hidden shadow-[0_0_50px_rgba(250,204,21,0.5)] border-4 border-yellow-500 animate-in zoom-in-95 relative max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             {/* Header */}
-            <div className="h-32 relative flex items-center justify-center bg-gradient-to-br from-indigo-900 to-black overflow-hidden border-b-4 border-indigo-700 shrink-0">
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
-                <div className="z-10 text-center">
-                    <div className="text-6xl mb-2 filter drop-shadow-lg transform -rotate-12">🏍️</div>
-                    <h2 className="text-2xl font-black uppercase italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-white">
+            <div className="h-32 relative flex items-center justify-center bg-gradient-to-br from-purple-900 to-indigo-900 overflow-hidden border-b-4 border-yellow-500 shrink-0">
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20"></div>
+                <div className="z-10 text-center transform -skew-x-6">
+                    <div className="text-6xl mb-2 filter drop-shadow-lg">🛹</div>
+                    <h2 className="text-2xl font-black uppercase italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-white">
                         {t.name}
                     </h2>
                 </div>
@@ -44,22 +44,22 @@ export const MotocrossEntryView: React.FC<Props> = ({ state, dispatch, t, curren
 
             <div className="p-6 bg-slate-900 relative space-y-4">
                 
-                {/* Special Action: Motocross */}
+                {/* Special Action: Skate Game */}
                 {isAtLocation ? (
                     <button 
-                        onClick={() => dispatch({type: 'START_MOTOCROSS'})} 
-                        className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-black py-4 rounded-lg shadow-lg border-b-4 border-red-900 active:scale-95 transition-all text-lg flex items-center justify-center gap-2 group"
+                        onClick={() => dispatch({type: 'START_SKATE'})} 
+                        className="w-full bg-gradient-to-r from-yellow-500 to-pink-500 hover:from-yellow-400 hover:to-pink-400 text-black font-black py-4 rounded-lg shadow-lg border-b-4 border-pink-700 active:scale-95 transition-all text-lg flex items-center justify-center gap-2 group"
                     >
-                        <span>JUGAR MOTOCROSS</span>
-                        <span className="text-2xl group-hover:translate-x-1 transition-transform">🏁</span>
+                        <span>RAD SKATER</span>
+                        <span className="text-2xl group-hover:rotate-12 transition-transform">🔥</span>
                     </button>
                 ) : (
                     <div className="text-center text-xs text-gray-500 italic py-2 border border-slate-700 rounded bg-slate-950">
-                        Debes estar aquí para competir en el circuito.
+                        Debes estar aquí para patinar.
                     </div>
                 )}
 
-                {/* Property Info (Rent Table) - "Rollo lo aburrido" */}
+                {/* Property Info (Rent Table) */}
                 <div className="bg-slate-800 rounded-lg overflow-hidden text-xs border border-slate-700">
                     <div className="bg-slate-950 px-3 py-2 border-b border-slate-700 flex justify-between">
                         <span className="font-bold text-gray-400">RENTA</span>
@@ -144,7 +144,7 @@ export const MotocrossEntryView: React.FC<Props> = ({ state, dispatch, t, curren
                     )}
                 </div>
 
-                <button onClick={close} className="w-full mt-2 text-center text-xs text-indigo-400 hover:text-white underline">
+                <button onClick={close} className="w-full mt-2 text-center text-xs text-yellow-600 hover:text-yellow-400 underline">
                     Cerrar
                 </button>
             </div>

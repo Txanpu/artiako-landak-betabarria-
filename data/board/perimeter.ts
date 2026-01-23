@@ -44,7 +44,7 @@ export const PERIMETER_TILES: Partial<TileData>[] = [
   rail('Metro Arteaga Urias'), // 21
   p('Aberasturi', 'yellow', 180, 'Arrantzale'), // 22
   util('IberdueroLuz'), // 23
-  p('Bird Center', 'emerald', 190, 'Verde'), // 24
+  p('Bird Center', 'emerald', 190, 'Verde', 'bird_hunt'), // 24 - NEW MINIGAME
   p('Autokarabanak', 'emerald', 200, 'Verde'), // 25
   ferry('Ferris Laida'), // 26
   p('Casino Blackjack', 'pink', 300, 'Rosa', 'casino_bj'), // 27
@@ -87,7 +87,7 @@ export const PERIMETER_TILES: Partial<TileData>[] = [
   p('Medikue', 'teal', 370, 'Azul'), // 56
   air('Ozolloko Aireportue'), // 57
   p('Frontoie', 'indigo', 380, 'Baserri'), // 58
-  p('Skateko Pistie', 'indigo', 390, 'Baserri'), // 59
+  p('Skateko Pistie', 'indigo', 390, 'Baserri', 'skate'), // 59 - ADDED SUBTYPE SKATE
   ferry('Ferris Mundaka'), // 60
   p('Txarlin Pistie', 'indigo', 400, 'Baserri'), // 61
   p('Txopebenta', 'violet', 410, 'Sirimiri'), // 62

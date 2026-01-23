@@ -15,6 +15,17 @@ const shuffle = (array: any[]) => {
 export const quizReducer = (state: GameState, action: any): GameState => {
     switch (action.type) {
         case 'START_QUIZ': {
+            const pIdx = state.currentPlayerIndex;
+            const player = state.players[pIdx];
+
+            if (player.playedMinigames?.includes('quiz')) {
+                return { ...state, logs: ['🚫 Ya has participado en el Quiz este turno.', ...state.logs] };
+            }
+
+            // Mark as played
+            const newPlayers = [...state.players];
+            newPlayers[pIdx] = { ...player, playedMinigames: [...(player.playedMinigames || []), 'quiz'] };
+
             // Logic to determine mode and participants
             // Left Gov = Mode B (Salseo) for Heli/Female/Marcianito
             // Others = Mode A (Maldini) for Males
@@ -36,6 +47,7 @@ export const quizReducer = (state: GameState, action: any): GameState => {
 
             return {
                 ...state,
+                players: newPlayers,
                 quiz: {
                     isOpen: true,
                     mode,

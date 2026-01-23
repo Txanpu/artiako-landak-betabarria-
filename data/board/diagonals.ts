@@ -33,7 +33,7 @@ export const DIAGONAL_TILES: Partial<TileData>[] = [
   p('Hemingway Etxea', 'navy', 570, 'Zorionak'),      // 82 (Entry from Jail #16)
   p('Etxealaia', 'navy', 580, 'Zorionak'),            // 83
   p('Kastillue', 'navy', 590, 'Zorionak'),            // 84
-  p('Errota', 'navy', 600, 'Zorionak'),               // 85
+  p('Errota', 'navy', 600, 'Zorionak', 'boat_race'),  // 85 (ERROTA - BOAT GAME)
   { type: TileType.SLOTS, name: 'Tragaperras' },      // 86
   { type: TileType.EVENT, name: 'Suerte' },           // 87
   { type: TileType.PROP, name: 'Canódromo', subtype: 'greyhound', price: 0, owner: 'E' }, // 88

@@ -123,6 +123,9 @@ export const createInitialState = (): GameState => {
       anarchyActionPending: false,
       
       // Motocross
-      motocross: null
+      motocross: null,
+      
+      // Boat Race
+      boatRace: null
   };
 };

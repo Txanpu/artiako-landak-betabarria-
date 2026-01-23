@@ -118,7 +118,8 @@ export const useSetupFlow = (onStartGame: (payload: { players: Player[], logs: s
                 offshoreMoney: 0,
                 farlopa: 0,
                 highTurns: 0,
-                genderAbilityCooldown: 0
+                genderAbilityCooldown: 0,
+                playedMinigames: []
             });
             idCounter++;
         });
@@ -147,7 +148,8 @@ export const useSetupFlow = (onStartGame: (payload: { players: Player[], logs: s
                 offshoreMoney: 0,
                 farlopa: 0,
                 highTurns: 0,
-                genderAbilityCooldown: 0
+                genderAbilityCooldown: 0,
+                playedMinigames: []
             }); 
             idCounter++;
         }

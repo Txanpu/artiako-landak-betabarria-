@@ -4,7 +4,10 @@ import { GameState, TileType } from '../../types';
 import { StandardTileModal } from './tile/StandardTileModal';
 import { SpecialTileModal } from './tile/SpecialTileModal';
 import { FioreModal } from './tile/FioreModal';
-import { MotocrossEntryView } from './tile/views/special/MotocrossEntryView'; // Import
+import { MotocrossEntryView } from './tile/views/special/MotocrossEntryView'; 
+import { ErrotaEntryView } from './tile/views/special/ErrotaEntryView'; 
+import { SkateEntryView } from './tile/views/special/SkateEntryView';
+import { BirdHuntEntryView } from './tile/views/special/BirdHuntEntryView'; // Import
 
 interface TileModalProps {
     state: GameState;
@@ -37,6 +40,33 @@ export const TileModal: React.FC<TileModalProps> = ({ state, dispatch }) => {
         return (
             <div className="fixed inset-0 z-40 flex items-center justify-center bg-indigo-950/90 backdrop-blur-md p-4" onClick={close}>
                 <MotocrossEntryView state={state} dispatch={dispatch} t={t} currentPlayer={currentPlayer} close={close} />
+            </div>
+        );
+    }
+
+    // ERROTA (BOAT RACE)
+    if (t.name === 'Errota') {
+        return (
+            <div className="fixed inset-0 z-40 flex items-center justify-center bg-sky-950/90 backdrop-blur-md p-4" onClick={close}>
+                <ErrotaEntryView state={state} dispatch={dispatch} t={t} currentPlayer={currentPlayer} close={close} />
+            </div>
+        );
+    }
+
+    // SKATEKO PISTIE (SKATE GAME)
+    if (t.name === 'Skateko Pistie') {
+        return (
+            <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/90 backdrop-blur-md p-4" onClick={close}>
+                <SkateEntryView state={state} dispatch={dispatch} t={t} currentPlayer={currentPlayer} close={close} />
+            </div>
+        );
+    }
+
+    // BIRD CENTER (DUCK HUNT)
+    if (t.name === 'Bird Center') {
+        return (
+            <div className="fixed inset-0 z-40 flex items-center justify-center bg-emerald-950/90 backdrop-blur-md p-4" onClick={close}>
+                <BirdHuntEntryView state={state} dispatch={dispatch} t={t} currentPlayer={currentPlayer} close={close} />
             </div>
         );
     }

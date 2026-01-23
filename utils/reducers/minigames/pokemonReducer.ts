@@ -6,8 +6,19 @@ import { formatMoney } from '../../gameLogic';
 export const pokemonReducer = (state: GameState, action: any): GameState => {
     switch (action.type) {
         case 'START_POKEMON_BATTLE': {
+            const pIdx = state.currentPlayerIndex;
+            const player = state.players[pIdx];
+
+            if (player.playedMinigames?.includes('pokemon')) {
+                return { ...state, logs: ['🚫 Ya has luchado en el Gimnasio este turno.', ...state.logs] };
+            }
+
             const { tileId, rent } = action.payload;
             
+            // Mark as played
+            const newPlayers = [...state.players];
+            newPlayers[pIdx] = { ...player, playedMinigames: [...(player.playedMinigames || []), 'pokemon'] };
+
             // Pick Garchomp for Player (Gen 5 King)
             const playerMon = createPokemon("Garchomp", true);
             
@@ -18,6 +29,7 @@ export const pokemonReducer = (state: GameState, action: any): GameState => {
 
             return {
                 ...state,
+                players: newPlayers,
                 pokemon: {
                     isOpen: true,
                     tileId,
