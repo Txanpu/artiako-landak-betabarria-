@@ -65,6 +65,10 @@ export const marketReducer = (state: GameState, action: any): GameState => {
             return newState;
         }
         
+        // ... (CREATE_OPTION and EXERCISE_OPTION omitted for brevity, assume they stay same)
+        // Ensure to include them if not returned here, but XML replacement replaces whole file content usually.
+        // Wait, market.ts is big. I need to include the rest of the file content so it doesn't get deleted.
+        
         case 'CREATE_OPTION_CONTRACT': {
             const { mode, propId, strike, premium, counterpartyId } = action.payload;
             const me = state.players[state.currentPlayerIndex];
@@ -78,14 +82,10 @@ export const marketReducer = (state: GameState, action: any): GameState => {
             let holderId = -1;
             let type: 'call' | 'put' = 'call';
             
-            // Logic Container for validation and money transfer
             const executeDeal = (payer: typeof me, receiver: typeof me, wId: number, hId: number, optType: 'call' | 'put', propOwnerId: number) => {
-                // 1. Check Ownership
                 if (tile.owner !== propOwnerId) return { success: false, msg: `❌ La propiedad no pertenece al emisor correcto.` };
-                // 2. Check Funds
                 if (payer.money < premium) return { success: false, msg: `❌ ${payer.name} no tiene fondos para la prima.` };
 
-                // 3. Transfer Money
                 const newPlayers = state.players.map(p => {
                     if (p.id === payer.id) return { ...p, money: p.money - premium };
                     if (p.id === receiver.id) return { ...p, money: p.money + premium };
@@ -102,22 +102,18 @@ export const marketReducer = (state: GameState, action: any): GameState => {
             let res: any;
 
             if (mode === 'sell_call') {
-                // I sell Call. I get Premium. I am Writer. I own Prop.
                 res = executeDeal(other, me, me.id, other.id, 'call', me.id);
                 logMsg = `📝 CALL Creada: ${me.name} vende opción de compra a ${other.name} sobre #${tile.name}. Prima: $${premium}.`;
             } 
             else if (mode === 'buy_call') {
-                // I buy Call. I pay Premium. Other is Writer. Other owns Prop.
                 res = executeDeal(me, other, other.id, me.id, 'call', other.id);
                 logMsg = `📝 CALL Creada: ${me.name} compra derecho a comprar #${tile.name} a ${other.name}. Prima: $${premium}.`;
             }
             else if (mode === 'buy_put') {
-                // I buy Put. I pay Premium. Other is Writer (Insurer). I own Prop.
                 res = executeDeal(me, other, other.id, me.id, 'put', me.id);
                 logMsg = `📝 PUT Creada: ${me.name} compra seguro de venta a ${other.name} sobre #${tile.name}. Prima: $${premium}.`;
             }
             else if (mode === 'sell_put') {
-                // I sell Put (Insurer). I get Premium. I am Writer. Other owns Prop.
                 res = executeDeal(other, me, me.id, other.id, 'put', other.id);
                 logMsg = `📝 PUT Creada: ${me.name} asegura la propiedad #${tile.name} de ${other.name}. Prima: $${premium}.`;
             }
@@ -164,6 +160,7 @@ export const marketReducer = (state: GameState, action: any): GameState => {
                 };
             }
 
+            // ... (Rest of Exercise Logic - Call/Put checks)
             let logMsg = '';
             let success = false;
             let newPlayers = [...state.players];
@@ -190,9 +187,6 @@ export const marketReducer = (state: GameState, action: any): GameState => {
                 if (tile.owner !== holder.id) {
                     return { ...state, financialOptions: state.financialOptions.filter(o => o.id !== optId), logs: [`❌ PUT Fallida: Ya no posees la propiedad.`, ...state.logs] };
                 }
-                
-                // Writer (Insurer) pays Holder
-                // Even if Writer has no money, debt is enforced (negative balance -> bankruptcy check later)
                 
                 newPlayers = newPlayers.map(p => {
                     if (p.id === holder.id) return { ...p, money: p.money + opt.strikePrice, props: p.props.filter(tid => tid !== tile.id) };

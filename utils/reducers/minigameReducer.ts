@@ -1,6 +1,5 @@
 
 import { GameState } from '../../types';
-import { playBlackjack } from '../gameLogic';
 import { rouletteReducer } from './minigames/rouletteReducer';
 import { blackjackReducer } from './minigames/blackjackReducer';
 import { greyhoundReducer } from './minigames/greyhoundReducer';
@@ -23,20 +22,24 @@ export const minigameReducer = (state: GameState, action: any): GameState => {
             if (state.gov === 'left') return { ...state, showCasinoModal: false, logs: ['🚫 El Gobierno de Izquierdas ha clausurado los Casinos.', ...state.logs] };
 
             const { game } = action.payload; 
-            const player = state.players[state.currentPlayerIndex];
-            let logMsg = '';
             
-            if (game === 'blackjack') {
-                const res = playBlackjack(state, player);
-                if (res.msg) { 
-                    logMsg = res.msg;
-                } else {
-                    if (res.win) { player.money += 15; logMsg = `🃏 BJ: ${player.name} GANA (${res.playerVal} vs ${res.dealer})`; }
-                    else if (res.push) { logMsg = `🃏 BJ: Empate (${res.playerVal})`; }
-                    else { player.money -= 30; logMsg = `🃏 BJ: Pierdes (${res.playerVal} vs ${res.dealer})`; }
-                }
-            }
-            return { ...state, showCasinoModal: false, logs: [logMsg, ...state.logs] };
+            // Open Interactive Modal
+            return { 
+                ...state, 
+                showCasinoModal: true, 
+                casinoGame: game,
+                // Reset internal minigame states to start fresh
+                blackjackState: undefined,
+                rouletteState: undefined
+            };
+        }
+        
+        // NEW: Explicit reset for Roulette to fix "stuck spinning" bug
+        case 'RESET_ROULETTE_STATE': {
+            return {
+                ...state,
+                rouletteState: undefined
+            };
         }
         
         case 'CLOSE_CASINO': return { ...state, showCasinoModal: false, rouletteState: undefined, blackjackState: undefined };

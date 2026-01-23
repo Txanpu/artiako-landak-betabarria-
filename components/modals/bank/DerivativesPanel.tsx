@@ -9,6 +9,9 @@ export const DerivativesPanel: React.FC<{ dispatch: React.Dispatch<any>, state?:
 
     const [activeView, setActiveView] = useState<'create' | 'wallet'>('create');
     const currentPlayer = state.players[state.currentPlayerIndex];
+    
+    if (!currentPlayer) return null; // Safety check
+
     const myOptionsCount = state.financialOptions.filter(o => o.holderId === currentPlayer.id).length;
 
     return (

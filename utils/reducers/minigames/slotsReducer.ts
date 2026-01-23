@@ -1,6 +1,6 @@
 
 import { GameState } from '../../../types';
-import { isPowerOff, canProxenetaCheat } from '../../gameLogic';
+import { isPowerOff, canProxenetaCheat, getRandom } from '../../gameLogic';
 
 const SLOT_SYMBOLS = ['🍒', '🍋', '🍇', '🍉', '🔔', '💎', '7️⃣'];
 
@@ -22,10 +22,10 @@ export const slotsReducer = (state: GameState, action: any): GameState => {
     player.money -= bet;
     let newStateMoney = state.estadoMoney + bet;
 
-    // 2. Spin Logic
-    let r1 = SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)];
-    let r2 = SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)];
-    let r3 = SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)];
+    // 2. Spin Logic (Secure Random)
+    let r1 = SLOT_SYMBOLS[Math.floor(getRandom() * SLOT_SYMBOLS.length)];
+    let r2 = SLOT_SYMBOLS[Math.floor(getRandom() * SLOT_SYMBOLS.length)];
+    let r3 = SLOT_SYMBOLS[Math.floor(getRandom() * SLOT_SYMBOLS.length)];
 
     // --- PROXENETA CHEAT CHECK (PRE-CALC) ---
     // If we are about to lose, check if we can force a small win
@@ -33,7 +33,7 @@ export const slotsReducer = (state: GameState, action: any): GameState => {
         const potentialWin = (r1 === r2 && r2 === r3) || (r1 === '🍒' || r2 === '🍒' || r3 === '🍒');
         if (!potentialWin && canProxenetaCheat(player, 0.30)) {
             // Force 2 Cherries (Payout 5x) or 3 Lemons (Payout 25x)
-            if (Math.random() < 0.2) {
+            if (getRandom() < 0.2) {
                 r1 = '🍋'; r2 = '🍋'; r3 = '🍋'; // Rare Cheat
             } else {
                 r1 = '🍒'; r2 = '🍒'; r3 = SLOT_SYMBOLS[2]; // Common Cheat

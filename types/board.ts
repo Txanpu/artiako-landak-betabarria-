@@ -29,7 +29,7 @@ export interface TileData {
   price?: number;
   color?: string;
   subtype?: string; // 'rail', 'bus', 'utility', 'fiore', etc.
-  owner?: number | 'E' | null;
+  owner?: number | 'E' | 'SHARES' | null; // Updated to include 'SHARES'
   houses?: number;
   hotel?: boolean;
   mortgaged?: boolean;
@@ -44,4 +44,5 @@ export interface TileData {
   mortgagePrincipal?: number;
   blockedRentTurns?: number; 
   isBroken?: boolean; // NEW: For Anarchy revolutions
+  companyId?: string; // NEW: Linked Monopoly Company
 }

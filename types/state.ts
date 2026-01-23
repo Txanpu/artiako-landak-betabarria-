@@ -1,7 +1,7 @@
 
 import { Player } from './player';
 import { TileData } from './board';
-import { AuctionState, TradeOffer, Loan, LoanPool, FinancialOption, Listing } from './economy';
+import { AuctionState, TradeOffer, Loan, LoanPool, FinancialOption, Listing, MonopolyCompany } from './economy';
 import { GovConfig, GovernmentType, Greyhound, RentFilter } from './config';
 import { Question } from '../data/quizData'; // Import Question
 
@@ -54,6 +54,44 @@ export interface PokemonState {
     phase: 'intro' | 'battle' | 'victory' | 'defeat';
 }
 
+export interface MotocrossState {
+    isOpen: boolean;
+    phase: 'lobby' | 'playing' | 'crashed' | 'won';
+    score: number;
+    bestScore?: number;
+    reward: number;
+}
+
+// --- NEW POLYMARKET TYPES ---
+export interface MarketAssets {
+    money: number;
+    farlopa: number;
+    props: number[]; // Tile IDs
+    shares: { companyId: string, count: number }[];
+    options: string[]; // Financial Option IDs
+    loans: string[]; // Loan IDs (where player is Lender)
+}
+
+export interface PredictionMarket {
+    id: string;
+    creatorId: number;
+    targetId: number;
+    condition: string; // The text description of the bet
+    creatorSide: 'YES' | 'NO'; // What the creator is betting on
+    
+    // Assets put up by each side (held in escrow when active)
+    stakesYes: MarketAssets; 
+    stakesNo: MarketAssets;
+    
+    // Who is who
+    playerYes: number; // ID of player betting YES
+    playerNo: number;  // ID of player betting NO
+    
+    status: 'pending' | 'active' | 'voting' | 'resolved';
+    votes: Record<number, 'YES' | 'NO'>; // Human votes
+    createdAtTurn: number;
+}
+
 export interface GameState {
   // Core
   players: Player[];
@@ -70,7 +108,8 @@ export interface GameState {
   trade: TradeOffer | null;
   selectedTileId: number | null;
   quiz?: QuizState | null; 
-  pokemon?: PokemonState | null; // NEW POKEMON STATE
+  pokemon?: PokemonState | null; 
+  motocross?: MotocrossState | null; 
   
   // Economy & Gov
   estadoMoney: number;
@@ -84,8 +123,13 @@ export interface GameState {
   loanPools: LoanPool[]; 
   financialOptions: FinancialOption[]; 
   marketListings: Listing[]; 
+  companies: MonopolyCompany[]; 
   housesAvail: number;
   hotelsAvail: number;
+
+  // POLYMARKET (NEW)
+  predictionMarkets: PredictionMarket[];
+  showPolymarket: boolean;
 
   // EXTRAS: Bundles & Anti-Abuse
   bundleListings: { id: string, tiles: number[], minPrice: number }[];
@@ -103,11 +147,11 @@ export interface GameState {
   election: ElectionState | null;
   showDarkWeb: boolean;
   showGovGuide: boolean; 
-  showWeatherModal: boolean; // NEW: Forecast UI Toggle
-  showFbiModal: boolean; // NEW: FBI Investigation UI
-  showAvatarSelection: boolean; // NEW: Avatar Switcher
-  showLogsModal: boolean; // NEW: System Logs Modal
-  hideHud: boolean; // NEW: Toggle visibility of top-left HUD
+  showWeatherModal: boolean; 
+  showFbiModal: boolean; 
+  showAvatarSelection: boolean; 
+  showLogsModal: boolean; 
+  hideHud: boolean; 
   
   // Metrics History for Sparklines
   metrics: Record<number, { turn: number, money: number, netWorth: number }[]>;
@@ -124,7 +168,7 @@ export interface GameState {
   showBankModal: boolean;
   showLoansModal: boolean;
   showTradeModal: boolean;
-  preselectedTradeTarget?: number | null; // NEW: For HUD interaction
+  preselectedTradeTarget?: number | null; 
   showBalanceModal: boolean; 
   showSlots: boolean; 
   showCasinoModal: boolean;
@@ -132,7 +176,7 @@ export interface GameState {
   casinoGame?: 'blackjack' | 'roulette' | null;
   casinoPlays: number; 
   showHeatmap: boolean; 
-  viewFullBoard?: boolean; // NEW: Zoom Out Feature
+  viewFullBoard?: boolean; 
   slotsData?: { r1: string, r2: string, r3: string, win: boolean, msg: string, payout: number };
   heatmap: Record<number, number>; 
   
@@ -183,4 +227,8 @@ export interface GameState {
   // Flags
   usedTransportHop: boolean;
   rngSeed: number; 
+  
+  // NEW: Debt & Anarchy Flow
+  pendingDebt: { amount: number, creditorId: number | 'E' | 'SHARES' } | null;
+  anarchyActionPending: boolean;
 }

@@ -11,6 +11,9 @@ export const manageProperty = (state: GameState, action: any): GameState => {
         const player = { ...state.players[pIdx] };
         const tile = { ...state.tiles[tId] };
         
+        // Cannot repair if company owned (auto-managed/frozen)
+        if (tile.companyId) return { ...state, logs: ['🚫 Propiedad gestionada por Sociedad. No puedes alterarla.', ...state.logs] };
+
         if (tile.isBroken && tile.owner === player.id) {
             const cost = getRepairCost(tile);
             if (player.money >= cost) {
@@ -28,31 +31,44 @@ export const manageProperty = (state: GameState, action: any): GameState => {
     switch(action.type) {
         case 'BUILD_HOUSE': {
             const { tId } = action.payload;
+            const tile = state.tiles[tId];
+            if (tile.companyId) return { ...state, logs: ['🚫 Sociedad Anónima: Gestión congelada. No se puede construir.', ...state.logs] };
+            
             const pIdx = state.currentPlayerIndex;
             const player = { ...state.players[pIdx] };
-            const tile = { ...state.tiles[tId] };
             
             const permission = canBuild(state.gov, tile);
             if (!permission.allowed) {
                 return { ...state, logs: [`🚫 ${permission.reason}`, ...state.logs] };
             }
 
+            // === LEY DE PROPIEDAD HORIZONTAL ===
+            // En gobiernos NO Libertarios ni Anarquistas, se exige construcción uniforme.
+            if (state.gov !== 'libertarian' && state.gov !== 'anarchy') {
+                const group = state.tiles.filter(t => t.color === tile.color);
+                
+                const currentLevel = (tile.hotel ? 5 : (tile.houses || 0));
+                const minLevel = Math.min(...group.map(t => (t.hotel ? 5 : (t.houses || 0))));
+
+                // Si esta propiedad ya tiene más nivel que la mínima del grupo, no puedes subirla más
+                // (Debes subir las otras primero)
+                if (currentLevel > minLevel) {
+                    return { ...state, logs: [`🚫 Ley de Propiedad Horizontal: Debes edificar uniformemente el grupo ${tile.color}.`, ...state.logs] };
+                }
+            }
+            // ===================================
+
             const baseCost = getHouseCost(tile);
             
             // --- DISCOUNT LOGIC ---
             let discountMul = 1;
-            
-            // Florentino Role
             if (player.role === 'florentino') discountMul = 0.8;
-            
-            // RIGHT GOV: "Ley del Suelo" (Aggressive construction)
             if (state.gov === 'right') {
-                discountMul = 0.5; // 50% Discount base
-                if (player.role === 'florentino') discountMul = 0.4; // Stack: 40% total cost
+                discountMul = 0.5; 
+                if (player.role === 'florentino') discountMul = 0.4;
             }
 
             const finalCost = Math.floor(baseCost * discountMul);
-
             const extraLogs: string[] = [];
             const newPlayers = [...state.players];
             
@@ -70,7 +86,7 @@ export const manageProperty = (state: GameState, action: any): GameState => {
 
             if (!hasStock) {
                 if (state.gov === 'right') {
-                    buildCost *= 4; // Sobrecoste por escasez (Derecha permite construir pagando más)
+                    buildCost *= 4; 
                 } else {
                     return { ...state, logs: ['🚫 No hay stock de edificios en el Banco.', ...state.logs] };
                 }
@@ -83,7 +99,6 @@ export const manageProperty = (state: GameState, action: any): GameState => {
                  if (state.gov === 'right') extraLogs.push('🏗️ Ley del Suelo: 50% Descuento aplicado.');
                  else if (player.role === 'florentino') extraLogs.push('👷 Descuento Constructora aplicado.');
 
-                 // --- UTILITY CONNECTION FEE ---
                  const CONNECTION_FEE = 20;
                  state.players.forEach((owner, idx) => {
                      const hasUtility = state.tiles.some(t => t.subtype === 'utility' && t.owner === owner.id);
@@ -101,18 +116,19 @@ export const manageProperty = (state: GameState, action: any): GameState => {
                  });
 
                  let logMsg = '';
-                 if ((tile.houses || 0) === 4) { 
-                     tile.houses = 0; tile.hotel = true; 
+                 const uTile = { ...tile }; // Clone
+                 if ((uTile.houses || 0) === 4) { 
+                     uTile.houses = 0; uTile.hotel = true; 
                      if(hasStock) { state.hotelsAvail--; state.housesAvail += 4; }
-                     logMsg = `${player.name} construyó un HOTEL en ${tile.name} ($${formatMoney(buildCost)}).`;
+                     logMsg = `${player.name} construyó un HOTEL en ${uTile.name} ($${formatMoney(buildCost)}).`;
                  }
                  else { 
-                     tile.houses = (tile.houses || 0) + 1; 
+                     uTile.houses = (uTile.houses || 0) + 1; 
                      if(hasStock) state.housesAvail--;
-                     logMsg = `${player.name} construyó una casa en ${tile.name} ($${formatMoney(buildCost)}).`;
+                     logMsg = `${player.name} construyó una casa en ${uTile.name} ($${formatMoney(buildCost)}).`;
                  }
                  
-                 const uTiles = [...state.tiles]; uTiles[tId] = tile;
+                 const uTiles = [...state.tiles]; uTiles[tId] = uTile;
                  newPlayers[pIdx] = player; 
                  
                  return { ...state, tiles: uTiles, players: newPlayers, logs: [logMsg, ...extraLogs, ...state.logs] };
@@ -120,66 +136,81 @@ export const manageProperty = (state: GameState, action: any): GameState => {
             return state;
         }
         case 'SELL_HOUSE': {
-             const { tId } = action.payload;
+            const { tId } = action.payload;
+            const tile = state.tiles[tId];
+            if (tile.companyId) return { ...state, logs: ['🚫 Sociedad Anónima: Gestión congelada. No se puede vender.', ...state.logs] };
+            
             const pIdx = state.currentPlayerIndex;
             const player = { ...state.players[pIdx] };
-            const tile = { ...state.tiles[tId] };
             
             if (tile.isBroken) {
                 return { ...state, logs: ['🚫 No puedes vender edificios en ruinas.', ...state.logs] };
+            }
+
+            // === LEY DE PROPIEDAD HORIZONTAL (VENTA) ===
+            // También aplica al vender: debes mantener uniformidad al bajar nivel.
+            if (state.gov !== 'libertarian' && state.gov !== 'anarchy') {
+                const group = state.tiles.filter(t => t.color === tile.color);
+                const currentLevel = (tile.hotel ? 5 : (tile.houses || 0));
+                const maxLevel = Math.max(...group.map(t => (t.hotel ? 5 : (t.houses || 0))));
+
+                // Si esta propiedad tiene menos nivel que la máxima (ya está baja), no puedes bajarla más
+                // Debes bajar las más altas primero.
+                if (currentLevel < maxLevel) {
+                    return { ...state, logs: [`🚫 Ley de Propiedad Horizontal: Debes vender uniformemente en el grupo ${tile.color}.`, ...state.logs] };
+                }
             }
 
             const cost = getHouseCost(tile); 
             const refund = Math.floor(cost * 0.5);
 
             if (tile.owner === player.id && (tile.houses || 0) > 0 || tile.hotel) {
-                if (tile.hotel) {
-                    tile.hotel = false;
-                    tile.houses = 4;
+                const uTile = { ...tile };
+                if (uTile.hotel) {
+                    uTile.hotel = false;
+                    uTile.houses = 4;
                     state.hotelsAvail++;
                     state.housesAvail = Math.max(0, state.housesAvail - 4);
                     player.money += refund * 5; 
                     player.money += refund; 
                 } else {
-                    tile.houses = (tile.houses || 0) - 1;
+                    uTile.houses = (uTile.houses || 0) - 1;
                     state.housesAvail++;
                     player.money += refund;
                 }
                 
-                const uTiles = [...state.tiles]; uTiles[tId] = tile;
+                const uTiles = [...state.tiles]; uTiles[tId] = uTile;
                 const uPlayers = [...state.players]; uPlayers[pIdx] = player;
-                return { ...state, tiles: uTiles, players: uPlayers, logs: [`${player.name} vendió edificio en ${tile.name}.`, ...state.logs] };
+                return { ...state, tiles: uTiles, players: uPlayers, logs: [`${player.name} vendió edificio en ${uTile.name}.`, ...state.logs] };
             }
             return state;
         }
         case 'MORTGAGE_PROP': {
             const { tId } = action.payload;
+            const tile = state.tiles[tId];
+            if (tile.companyId) return { ...state, logs: ['🚫 Sociedad Anónima: Activo protegido. No se puede hipotecar.', ...state.logs] };
+            
             const pIdx = state.currentPlayerIndex;
             const player = { ...state.players[pIdx] };
-            const tile = { ...state.tiles[tId] };
 
-            if (tile.isBroken) {
-                return { ...state, logs: ['🚫 No puedes hipotecar una propiedad en ruinas (Roto).', ...state.logs] };
-            }
-
-            if (state.blockMortgage[player.id] > 0) {
-                 return { ...state, logs: ['🚫 Bloqueo de hipoteca activo.', ...state.logs] };
-            }
+            if (tile.isBroken) return { ...state, logs: ['🚫 No puedes hipotecar una propiedad en ruinas (Roto).', ...state.logs] };
+            if (state.blockMortgage[player.id] > 0) return { ...state, logs: ['🚫 Bloqueo de hipoteca activo.', ...state.logs] };
 
             if (tile.owner === player.id && !tile.mortgaged && (tile.houses||0) === 0 && !tile.hotel) {
                 const value = Math.floor((tile.price || 0) * 0.5);
-                tile.mortgaged = true;
-                tile.mortgagePrincipal = value;
+                const uTile = { ...tile, mortgaged: true, mortgagePrincipal: value };
                 player.money += value;
                 
-                const uTiles = [...state.tiles]; uTiles[tId] = tile;
+                const uTiles = [...state.tiles]; uTiles[tId] = uTile;
                 const uPlayers = [...state.players]; uPlayers[pIdx] = player;
-                return { ...state, tiles: uTiles, players: uPlayers, logs: [`${player.name} hipotecó ${tile.name} por ${formatMoney(value)}.`, ...state.logs] };
+                return { ...state, tiles: uTiles, players: uPlayers, logs: [`${player.name} hipotecó ${uTile.name} por ${formatMoney(value)}.`, ...state.logs] };
             }
             return state;
         }
         case 'UNMORTGAGE_PROP': {
              const { tId } = action.payload;
+             // Unmortgage is allowed if it was somehow mortgaged (but creation logic prevents creation if mortgaged).
+             // Standard logic applies.
             const pIdx = state.currentPlayerIndex;
             const player = { ...state.players[pIdx] };
             const tile = { ...state.tiles[tId] };

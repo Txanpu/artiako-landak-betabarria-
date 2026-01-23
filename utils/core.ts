@@ -7,11 +7,29 @@ export const seedFromString = (s: string) => {
     return h >>> 0;
 };
 
+// NEW: Generador de Números Aleatorios Seguro (Basado en Entropía/Reloj)
+export const getRandom = (): number => {
+    // 1. Preferir Crypto API (Entropía del Hardware/Sistema)
+    if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
+        const array = new Uint32Array(1);
+        window.crypto.getRandomValues(array);
+        return array[0] / (0xFFFFFFFF + 1);
+    }
+    
+    // 2. Fallback: Mezcla caótica de Math.random y performance.now() (Reloj Alta Precisión)
+    // Esto asegura que el resultado dependa del milisegundo exacto de ejecución.
+    const time = performance.now();
+    const rand = Math.random();
+    // Mezcla no lineal simple
+    const mixed = Math.abs(Math.sin(time * rand * 1000));
+    return mixed - Math.floor(mixed);
+};
+
 export const formatMoney = (amount: number) => `$${Math.round(amount)}`;
 
-// Updated to N dice (0-9 values)
+// Updated to N dice (0-9 values) using Secure RNG
 export const rollDice = (count: number = 2): number[] => {
-    return Array.from({ length: count }, () => Math.floor(Math.random() * 10));
+    return Array.from({ length: count }, () => Math.floor(getRandom() * 10));
 };
 
 export const getNextPlayerIndex = (state: GameState): number => {

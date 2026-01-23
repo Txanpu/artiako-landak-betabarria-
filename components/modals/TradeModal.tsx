@@ -21,6 +21,7 @@ export const TradeModal: React.FC<TradeModalProps> = ({ state, dispatch }) => {
                 trade={state.trade} 
                 players={state.players} 
                 tiles={state.tiles} 
+                companies={state.companies} // Pass companies
                 currentPlayerId={currentPlayer.id} 
                 dispatch={dispatch} 
             />

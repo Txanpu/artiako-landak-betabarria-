@@ -82,6 +82,12 @@ export const StandardRenderer: React.FC<Props> = ({ tile, config, ownerColor, is
         }
     }
 
+    // Handle Shares Color override
+    let finalOwnerColor = ownerColor;
+    if (tile.owner === 'SHARES') {
+        finalOwnerColor = '#f59e0b'; // Amber/Gold for Companies
+    }
+
     return (
         <>
             {/* Color Bar */}
@@ -103,7 +109,7 @@ export const StandardRenderer: React.FC<Props> = ({ tile, config, ownerColor, is
                     )}
 
                     {isFiore && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/10 backdrop-blur-[1px]">
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-[1px]">
                             <span className="text-[6px] text-fuchsia-200 tracking-widest uppercase leading-none">NIGHT</span>
                             <span className="text-[9px] font-black text-white drop-shadow-[0_0_5px_rgba(255,255,255,0.8)] tracking-wide leading-none">CLUB</span>
                         </div>
@@ -166,13 +172,16 @@ export const StandardRenderer: React.FC<Props> = ({ tile, config, ownerColor, is
             </div>
 
             {/* Owner Strip Indicator */}
-            {ownerColor && (
+            {finalOwnerColor && (
                 <div 
                     className={`${flexClass.includes('row') ? 'h-full w-[6px] border-l' : 'w-full h-[6px] border-t'} border-black/30 relative z-20 shadow-inner`} 
-                    style={{ backgroundColor: ownerColor }}
+                    style={{ backgroundColor: finalOwnerColor }}
                 >
                     {tile.owner === 'E' && (
                         <div className="absolute inset-0 flex items-center justify-center text-[5px] text-black font-black opacity-50">E</div>
+                    )}
+                    {tile.owner === 'SHARES' && (
+                        <div className="absolute inset-0 flex items-center justify-center text-[5px] text-black font-black opacity-60">S.A</div>
                     )}
                 </div>
             )}

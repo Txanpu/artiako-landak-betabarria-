@@ -4,6 +4,7 @@ import { GameState, TileType } from '../../types';
 import { StandardTileModal } from './tile/StandardTileModal';
 import { SpecialTileModal } from './tile/SpecialTileModal';
 import { FioreModal } from './tile/FioreModal';
+import { MotocrossEntryView } from './tile/views/special/MotocrossEntryView'; // Import
 
 interface TileModalProps {
     state: GameState;
@@ -16,6 +17,9 @@ export const TileModal: React.FC<TileModalProps> = ({ state, dispatch }) => {
     const t = state.tiles[state.selectedTileId];
     const currentPlayer = state.players[state.currentPlayerIndex];
 
+    // FIX: Guard against undefined player during init or error state
+    if (!currentPlayer) return null;
+
     // Background Backdrop logic
     const close = () => dispatch({type: 'CLOSE_MODAL'});
     
@@ -24,6 +28,15 @@ export const TileModal: React.FC<TileModalProps> = ({ state, dispatch }) => {
         return (
             <div className="fixed inset-0 z-40 flex items-center justify-center bg-fuchsia-900/80 backdrop-blur-md p-4" onClick={close}>
                 <FioreModal state={state} dispatch={dispatch} t={t} currentPlayer={currentPlayer} />
+            </div>
+        );
+    }
+
+    // TXARLIN PISTIE (MOTOCROSS)
+    if (t.name === 'Txarlin Pistie') {
+        return (
+            <div className="fixed inset-0 z-40 flex items-center justify-center bg-indigo-950/90 backdrop-blur-md p-4" onClick={close}>
+                <MotocrossEntryView state={state} dispatch={dispatch} t={t} currentPlayer={currentPlayer} close={close} />
             </div>
         );
     }
@@ -41,7 +54,7 @@ export const TileModal: React.FC<TileModalProps> = ({ state, dispatch }) => {
         t.type === TileType.START || 
         t.type === TileType.BANK ||
         t.subtype === 'greyhound' ||
-        t.subtype === 'gym' // <--- ADDED GYM HERE
+        t.subtype === 'gym'
     ) {
         // Special Backdrop Colors
         let backdrop = "bg-black/60";
@@ -52,7 +65,7 @@ export const TileModal: React.FC<TileModalProps> = ({ state, dispatch }) => {
         if (t.subtype === 'greyhound') backdrop = "bg-slate-900/90";
         if (t.type === TileType.QUIZ) backdrop = "bg-indigo-950/90"; 
         if (t.name === 'Suerte' || t.name.includes('Comunidad')) backdrop = "bg-black/80";
-        if (t.subtype === 'gym') backdrop = "bg-[#2e2e2e]/90"; // Pokemon Style Grey
+        if (t.subtype === 'gym') backdrop = "bg-[#2e2e2e]/90"; 
 
         return (
             <div className={`fixed inset-0 z-40 flex items-center justify-center ${backdrop} backdrop-blur-sm p-4`} onClick={close}>

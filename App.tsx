@@ -18,19 +18,21 @@ import { DarkWebModal } from './components/modals/DarkWebModal';
 import { ElectionModal } from './components/modals/ElectionModal';
 import { QuizModal } from './components/modals/QuizModal';
 import { PokemonModal } from './components/modals/PokemonModal'; 
+import { MotocrossModal } from './components/modals/minigames/MotocrossModal'; 
+import { PolymarketModal } from './components/modals/PolymarketModal'; // Added
 import { GovGuideModal } from './components/modals/GovGuideModal'; 
 import { WeatherModal } from './components/modals/WeatherModal'; 
 import { FbiModal } from './components/modals/FbiModal'; 
 import { AvatarSelectorModal } from './components/modals/AvatarSelectorModal'; 
-import { LogsModal } from './components/modals/LogsModal'; // Added
+import { LogsModal } from './components/modals/LogsModal'; 
 import { GameState } from './types';
 import { createInitialState, makeHistory, makeWatchdog } from './utils/gameLogic';
 import { gameReducer } from './utils/gameReducer';
 import { useGameBots } from './hooks/useGameBots';
 import { useDiceAnimation } from './hooks/useDiceAnimation';
 
-// Bumped to v7 to force reset after board resize
-const SAVE_KEY = 'artiako_landak_save_v7';
+// Bumped to v8 to force reset
+const SAVE_KEY = 'artiako_landak_save_v8';
 
 const App: React.FC = () => {
   const [state, dispatch] = useReducer(gameReducer, createInitialState());
@@ -71,7 +73,6 @@ const App: React.FC = () => {
     <div className="flex w-screen h-screen bg-[#050505] text-slate-100 overflow-hidden font-sans">
       <div className="flex-1 relative overflow-hidden flex items-center justify-center bg-[#050505]">
         
-        {/* New Floating HUD (Replaces old weather/gov displays) */}
         {!state.hideHud && <GameHUD state={state} dispatch={dispatch} />}
         
         <div className="absolute inset-0 flex items-center justify-center p-2 md:p-8 z-0">
@@ -84,7 +85,6 @@ const App: React.FC = () => {
         <DebugPanel state={state} dispatch={dispatch} />
       </div>
 
-      {/* Desktop Sidebar */}
       <GameSidebar 
           state={state}
           dispatch={dispatch}
@@ -96,7 +96,6 @@ const App: React.FC = () => {
           canUndo={historyRef.current.canUndo()}
       />
 
-      {/* Mobile Sidebar */}
       <MobileSidebar 
           state={state}
           dispatch={dispatch}
@@ -120,6 +119,8 @@ const App: React.FC = () => {
       <ElectionModal state={state} dispatch={dispatch} />
       <QuizModal state={state} dispatch={dispatch} /> 
       <PokemonModal state={state} dispatch={dispatch} />
+      <MotocrossModal state={state} dispatch={dispatch} />
+      <PolymarketModal state={state} dispatch={dispatch} /> 
       <GovGuideModal state={state} dispatch={dispatch} />
       <WeatherModal state={state} dispatch={dispatch} />
       <FbiModal state={state} dispatch={dispatch} />

@@ -42,12 +42,23 @@ export interface FinancialOption {
     expiresTurn: number;
 }
 
+// === NEW: MONOPOLY SHARES ===
+export interface MonopolyCompany {
+    id: string;
+    name: string;
+    color: string;
+    propertyIds: number[];
+    totalShares: number; // Usually 100 or 1000
+    shareholders: Record<number, number>; // playerId -> amount owned
+    valuation: number; // Total value of assets at creation
+}
+
 // === MARKET & TRADE ===
 export interface Listing {
     id: string;
     sellerId: number;
-    assetType: 'loanShare' | 'poolUnit' | 'option';
-    assetRefId: string; // Loan ID, Pool ID, or Option ID
+    assetType: 'loanShare' | 'poolUnit' | 'option' | 'companyShare'; // Added companyShare
+    assetRefId: string; // Loan ID, Pool ID, Option ID, or Company ID
     subRefId?: string; // Share ID if applicable
     amount: number; // Units or Bips. For Option, usually 1.
     price: number;
@@ -61,7 +72,7 @@ export interface AuctionState {
   activePlayers: number[];
   timer: number;
   isOpen: boolean;
-  kind?: 'tile' | 'bundle' | 'loanShare' | 'poolUnit' | 'option'; 
+  kind?: 'tile' | 'bundle' | 'loanShare' | 'poolUnit' | 'option' | 'companyShare'; 
   assetId?: string; // Listing ID
   units?: number;   
   sealed?: boolean;
@@ -74,9 +85,10 @@ export interface TradeOffer {
     targetId: number;
     offeredMoney: number;
     offeredProps: number[]; 
-    offeredFarlopa?: number; // NEW
+    offeredFarlopa?: number; 
+    offeredShares?: { companyId: string, count: number }[]; // NEW: Shares trading
     requestedMoney: number;
     requestedProps: number[]; 
-    requestedFarlopa?: number; // NEW
+    requestedFarlopa?: number; 
     isOpen: boolean;
 }

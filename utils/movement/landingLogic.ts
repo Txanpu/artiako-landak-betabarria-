@@ -1,8 +1,8 @@
 
 import { GameState, TileType } from '../../types';
-import { trackTileLanding, handleRoleAbilities, drawEvent, checkOkupaOccupation, checkFentanylAddiction, formatMoney } from '../gameLogic';
+import { trackTileLanding, handleRoleAbilities, drawEvent, checkOkupaOccupation, checkFentanylAddiction, formatMoney, getRent, checkOkupaRentSkip } from '../gameLogic';
 import { getAvailableTransportHops } from '../board';
-import { FIESTA_TILES } from '../../constants';
+import { FIESTA_TILES, WELFARE_TILES } from '../../constants';
 import { getRandomWorker } from '../../../data/fioreData';
 import { getJailRules } from '../governmentRules';
 
@@ -11,8 +11,14 @@ export const handleLandingLogic = (state: GameState): GameState => {
     let player = { ...state.players[pIdx] };
     let newPos = player.pos;
     const tile = state.tiles[newPos];
+    let tileUpdates = [...state.tiles];
     let newPlayers = [...state.players];
     let roleLogs: string[] = [];
+    
+    // Flags for Rent Logic
+    let pendingDebt: { amount: number, creditorId: number | 'E' | 'SHARES' } | null = null;
+    let anarchyActionPending = false;
+    let rentPaidLog: string | null = null;
 
     // --- ANARCHY: THE PURGE (Steal from players on same tile) ---
     if (state.gov === 'anarchy') {
@@ -35,7 +41,6 @@ export const handleLandingLogic = (state: GameState): GameState => {
     // 1. Okupa Occupation check (Steal 'E' prop)
     const okupaCheck = checkOkupaOccupation(player, tile);
     let okupaMsg = null;
-    let tileUpdates = [...state.tiles];
     
     if (okupaCheck.success) {
         // Apply occupation
@@ -115,6 +120,85 @@ export const handleLandingLogic = (state: GameState): GameState => {
         }
     }
 
+    // --- AUTOMATIC RENT & DEBT LOGIC ---
+    const t = tile;
+    // Check if property is owned and not by current player
+    const isOwner = t.owner === player.id;
+    const isOwned = (t.owner !== null && t.owner !== undefined) || !!t.companyId;
+    
+    if (t.type === TileType.PROP && isOwned && !isOwner) {
+        const baseRent = getRent(t, state.dice[0] + state.dice[1], state.tiles, state);
+        const ivaRate = state.currentGovConfig.rentIVA || 0;
+        const ivaAmount = Math.round(baseRent * ivaRate);
+        const totalRent = baseRent + ivaAmount;
+
+        const isOkupaSkip = checkOkupaRentSkip(player);
+
+        if (totalRent > 0 && !isOkupaSkip) {
+            // ANARCHY: Choice (Pay or Plata o Plomo)
+            if (state.gov === 'anarchy') {
+                anarchyActionPending = true;
+            } 
+            // NORMAL: Auto-Pay
+            else {
+                // Welfare Logic (Left Gov)
+                const isWelfare = WELFARE_TILES.includes(t.name) || ['bus','rail','ferry','air'].includes(t.subtype || '');
+                if (state.gov === 'left' && isWelfare) {
+                    if (state.estadoMoney >= totalRent) {
+                        state.estadoMoney -= totalRent;
+                        rentPaidLog = `🏛️ Estado Subvencionista paga tu alquiler de ${formatMoney(totalRent)}.`;
+                        // Pay Owner Logic below...
+                    } else {
+                        roleLogs.push(`🏛️ Estado sin fondos para subvención. Impago.`);
+                    }
+                } else {
+                    // Player pays
+                    if (player.money >= totalRent) {
+                        player.money -= totalRent;
+                        rentPaidLog = `💸 ${player.name} paga automáticamente alquiler de ${formatMoney(totalRent)}.`;
+                    } else {
+                        // DEBT TRIGGER
+                        pendingDebt = { 
+                            amount: totalRent, 
+                            creditorId: t.companyId ? 'SHARES' : (t.owner || 'E') 
+                        };
+                    }
+                }
+
+                // Distribution Logic (Only if Paid or State Paid)
+                if ((player.money >= totalRent || (state.gov === 'left' && isWelfare && state.estadoMoney >= totalRent)) && !pendingDebt) {
+                    // Pay Creditor
+                    if (t.companyId) {
+                        const company = state.companies.find(c => c.id === t.companyId);
+                        if (company) {
+                            Object.entries(company.shareholders).forEach(([pid, shares]) => {
+                                const shareAmt = Math.floor(baseRent * (shares / company.totalShares));
+                                if (shareAmt > 0) {
+                                    const hIdx = newPlayers.findIndex(p => p.id === parseInt(pid));
+                                    if (hIdx !== -1) newPlayers[hIdx].money += shareAmt;
+                                }
+                            });
+                        }
+                    } else if (typeof t.owner === 'number') {
+                        const ownerIdx = newPlayers.findIndex(p => p.id === t.owner);
+                        if (ownerIdx !== -1) newPlayers[ownerIdx].money += baseRent;
+                    } else if (t.owner === 'E') {
+                        state.estadoMoney += baseRent;
+                    }
+
+                    // IVA to State
+                    if (ivaAmount > 0) {
+                        const toState = Math.floor(ivaAmount / 2);
+                        state.estadoMoney += toState;
+                        state.fbiPot = (state.fbiPot || 0) + (ivaAmount - toState);
+                    }
+                }
+            }
+        } else if (isOkupaSkip) {
+            roleLogs.push(`🏚️ ${player.name} (Okupa) se niega a pagar el alquiler.`);
+        }
+    }
+
     let showCasino = false;
     let casinoGame: 'blackjack' | 'roulette' | null = null;
     if (tile.subtype === 'casino_bj') { showCasino = true; casinoGame = 'blackjack'; }
@@ -172,6 +256,8 @@ export const handleLandingLogic = (state: GameState): GameState => {
     // Apply Player Updates
     newPlayers[pIdx] = player;
 
+    if (rentPaidLog) roleLogs.push(rentPaidLog);
+
     let finalState: GameState = {
         ...state,
         tiles: tileUpdates,
@@ -186,7 +272,10 @@ export const handleLandingLogic = (state: GameState): GameState => {
         isMoving: false, 
         pendingMoves: 0,
         movementOptions: [],
-        lastMovementPos: null 
+        lastMovementPos: null,
+        // Set new flags
+        pendingDebt,
+        anarchyActionPending
     };
 
     if (taxLog) {

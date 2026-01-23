@@ -3,6 +3,7 @@ import React from 'react';
 import { GameState, Player } from '../../types';
 import { SnortSlider } from '../ui/SnortSlider';
 import { useActionPermissions } from '../../hooks/useActionPermissions';
+import { formatMoney } from '../../utils/gameLogic';
 
 interface Props {
     state: GameState;
@@ -13,7 +14,6 @@ interface Props {
 }
 
 export const ActionPanel: React.FC<Props> = ({ state, player, onRoll, isRolling, dispatch }) => {
-    // Logic extracted to custom hook for cleanliness
     const { 
         currentTile, 
         actions, 
@@ -22,6 +22,62 @@ export const ActionPanel: React.FC<Props> = ({ state, player, onRoll, isRolling,
         ability, 
         global 
     } = useActionPermissions(state, player);
+
+    // --- RENT & DEBT BLOCK ---
+    if (state.pendingDebt) {
+        const debt = state.pendingDebt.amount;
+        const canAfford = player.money >= debt;
+        
+        return (
+            <div className="p-4 bg-red-950/80 border-b-4 border-red-600 animate-pulse">
+                <h3 className="text-white font-black text-xl text-center uppercase tracking-widest mb-2">🚨 CRISIS DE LIQUIDEZ</h3>
+                <p className="text-center text-red-200 text-xs mb-4">
+                    Debes pagar <span className="font-mono font-bold text-lg text-white">{formatMoney(debt)}</span>
+                    <br/>
+                    Vende activos, hipoteca o pide préstamos.
+                </p>
+                <div className="flex flex-col gap-2">
+                    <button 
+                        onClick={() => dispatch({type: 'PAY_PENDING_DEBT'})}
+                        disabled={!canAfford}
+                        className="w-full bg-green-600 hover:bg-green-500 disabled:bg-slate-700 disabled:text-gray-500 text-white font-black py-3 rounded shadow-lg uppercase text-sm"
+                    >
+                        {canAfford ? 'PAGAR DEUDA' : `FALTAN ${formatMoney(debt - player.money)}`}
+                    </button>
+                    <button 
+                        onClick={() => dispatch({type: 'DECLARE_BANKRUPTCY'})}
+                        className="w-full border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white font-bold py-2 rounded text-xs uppercase transition-colors"
+                    >
+                        DECLARAR BANCARROTA
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    if (state.anarchyActionPending) {
+        return (
+            <div className="p-4 bg-gray-900 border-b-4 border-slate-600">
+                <h3 className="text-white font-black text-lg text-center uppercase tracking-widest mb-4">🔥 ZONA ANARQUÍA</h3>
+                <div className="grid grid-cols-2 gap-3">
+                    <button 
+                        onClick={() => dispatch({type: 'RESOLVE_ANARCHY_RENT', payload: { mode: 'pay' }})}
+                        className="bg-green-700 hover:bg-green-600 text-white font-bold py-4 rounded-lg shadow-lg flex flex-col items-center"
+                    >
+                        <span>PAGAR RENTA</span>
+                        <span className="text-[10px] opacity-70 font-normal">Evitar problemas</span>
+                    </button>
+                    <button 
+                        onClick={() => dispatch({type: 'RESOLVE_ANARCHY_RENT', payload: { mode: 'plata_o_plomo' }})}
+                        className="bg-black border-2 border-red-600 text-red-500 hover:bg-red-900/50 font-black py-4 rounded-lg shadow-[0_0_15px_rgba(220,38,38,0.5)] flex flex-col items-center animate-pulse"
+                    >
+                        <span>💀 PLATA O PLOMO</span>
+                        <span className="text-[10px] opacity-70 font-normal">Riesgo 50%</span>
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="p-4 grid grid-cols-4 gap-2 border-b border-slate-800">
@@ -82,7 +138,6 @@ export const ActionPanel: React.FC<Props> = ({ state, player, onRoll, isRolling,
 
                                 {actions.canBuy && <ActionButton label="COMPRAR" sub={`$${currentTile.price}`} color="blue" onClick={() => dispatch({type: 'BUY_PROP'})} />}
                                 {actions.allowAuction && <ActionButton label="SUBASTAR" color="purple" onClick={() => dispatch({type: 'START_AUCTION', payload: currentTile.id})} />}
-                                {actions.mustPayRent && <ActionButton label="PAGAR RENTA" color="red" onClick={() => dispatch({type: 'PAY_RENT'})} fullWidth />}
                                 
                                 {actions.isBlocked && (
                                     <div className="col-span-2 bg-red-950/50 border border-red-900 text-red-400 p-2 rounded text-[10px] text-center uppercase font-bold">
@@ -104,7 +159,6 @@ export const ActionPanel: React.FC<Props> = ({ state, player, onRoll, isRolling,
 
             {/* SECONDARY ACTIONS (Icons) */}
             
-            {/* GENDER ABILITY BUTTON */}
             <button 
                 onClick={() => dispatch({ type: 'TRIGGER_GENDER_ABILITY' })}
                 disabled={!ability.canUse || global.isElectionOpen}
@@ -130,10 +184,10 @@ export const ActionPanel: React.FC<Props> = ({ state, player, onRoll, isRolling,
             <IconButton icon={state.viewFullBoard ? "🔍" : "🗺️"} label="Mapa" onClick={() => dispatch({type: 'TOGGLE_FULL_BOARD'})} />
             <IconButton icon="🤝" label="Trade" onClick={() => dispatch({type: 'PROPOSE_TRADE'})} />
             <IconButton icon="🏦" label="Banco" onClick={() => dispatch({type: 'TOGGLE_BANK_MODAL'})} />
+            <IconButton icon="🔮" label="Polymarket" onClick={() => dispatch({type: 'TOGGLE_POLYMARKET'})} />
             <IconButton icon="📈" label="Stats" onClick={() => dispatch({type: 'TOGGLE_BALANCE_MODAL'})} />
             <IconButton icon="📜" label="Logs" onClick={() => dispatch({type: 'TOGGLE_LOGS_MODAL'})} />
             
-            {/* Dark Web Button (Hacker) */}
             {roles.isHacker && (
                 <button 
                     onClick={() => dispatch({type: 'TOGGLE_DARK_WEB'})} 
@@ -145,7 +199,6 @@ export const ActionPanel: React.FC<Props> = ({ state, player, onRoll, isRolling,
                 </button>
             )}
 
-            {/* FBI Dossier Button (FBI) */}
             {roles.isFbi && (
                 <button 
                     onClick={() => dispatch({type: 'TOGGLE_FBI_MODAL'})} 

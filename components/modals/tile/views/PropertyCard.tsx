@@ -14,9 +14,13 @@ interface Props {
 
 export const PropertyCard: React.FC<Props> = ({ state, dispatch, t, currentPlayer }) => {
     const headerColor = t.color ? COLORS[t.color as keyof typeof COLORS] : '#334155';
+    
+    // Ownership Checks
     const isOwner = t.owner === currentPlayer?.id;
+    const isShares = t.owner === 'SHARES' || !!t.companyId;
     const isOwnerlessProp = t.owner === null;
     const isAtLocation = currentPlayer && currentPlayer.pos === t.id;
+    
     const houseCost = getHouseCost(t);
     const hasMonopoly = t.color ? ownsFullGroup(currentPlayer, t, state.tiles) : false;
 
@@ -39,8 +43,11 @@ export const PropertyCard: React.FC<Props> = ({ state, dispatch, t, currentPlaye
 
     // ANARCHY: PLATA O PLOMO Logic
     const isAnarchy = state.gov === 'anarchy';
-    const isRivalOwned = t.owner !== null && t.owner !== 'E' && t.owner !== currentPlayer.id;
+    const isRivalOwned = t.owner !== null && t.owner !== 'E' && t.owner !== 'SHARES' && t.owner !== currentPlayer.id;
     const canPlataOPlomo = isAnarchy && isAtLocation && isRivalOwned;
+
+    // Company Info
+    const company = isShares ? state.companies.find(c => c.id === t.companyId) : null;
 
     return (
         <div className="bg-slate-900 text-white w-full max-w-sm rounded-xl overflow-hidden shadow-2xl border border-slate-700 animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
@@ -54,6 +61,7 @@ export const PropertyCard: React.FC<Props> = ({ state, dispatch, t, currentPlaye
                 </div>
                 {t.mortgaged && <div className="absolute bottom-2 right-2 bg-red-600 text-white text-[10px] px-2 py-0.5 rounded font-bold uppercase shadow-lg border border-white">HIPOTECADA</div>}
                 {t.isBroken && <div className="absolute top-2 left-2 bg-orange-600 text-white text-[10px] px-2 py-0.5 rounded font-bold uppercase shadow-lg border border-white animate-pulse">EN RUINAS</div>}
+                {isShares && <div className="absolute top-2 right-2 bg-amber-500 text-black text-[10px] px-2 py-0.5 rounded font-bold uppercase shadow-lg border border-white">S.A.</div>}
             </div>
 
             <div className="p-6 space-y-4 bg-slate-900">
@@ -62,7 +70,18 @@ export const PropertyCard: React.FC<Props> = ({ state, dispatch, t, currentPlaye
                     <span className="font-black text-2xl text-emerald-400">{formatMoney(t.price || 0)}</span>
                 </div>
 
-                {t.isBroken ? (
+                {isShares ? (
+                     <div className="bg-slate-800 p-4 rounded text-center border border-amber-500/50 relative overflow-hidden">
+                         <div className="absolute top-0 right-0 p-2 opacity-10 text-4xl">🏢</div>
+                         <h4 className="text-amber-400 font-bold uppercase mb-2 text-xs tracking-wider">PROPIEDAD DE SOCIEDAD</h4>
+                         <div className="text-sm font-black text-white mb-2">{company?.name || 'Sociedad Anónima'}</div>
+                         <p className="text-[10px] text-gray-400 leading-tight">
+                             Gestión centralizada en Junta de Accionistas. 
+                             <br/>
+                             <span className="text-red-400 font-bold">No se puede construir, vender ni hipotecar individualmente.</span>
+                         </p>
+                     </div>
+                ) : t.isBroken ? (
                     <div className="bg-orange-900/50 p-4 rounded border border-orange-600 text-center">
                         <p className="text-orange-300 font-bold mb-2">¡PROPIEDAD DESTROZADA!</p>
                         <p className="text-xs text-gray-400 mb-4">No produce renta ni permite construir hasta ser reparada.</p>
@@ -106,7 +125,7 @@ export const PropertyCard: React.FC<Props> = ({ state, dispatch, t, currentPlaye
                 )}
 
                 {/* PLATA O PLOMO BUTTON */}
-                {canPlataOPlomo && !t.isBroken && (
+                {canPlataOPlomo && !t.isBroken && !isShares && (
                     <div className="col-span-2 mt-2">
                         <button 
                             onClick={() => dispatch({type: 'PLATA_O_PLOMO', payload: {tId: t.id}})}
@@ -123,7 +142,7 @@ export const PropertyCard: React.FC<Props> = ({ state, dispatch, t, currentPlaye
                 <div className="grid grid-cols-2 gap-2 mt-2">
                     {(canBuyDirect || forceBuy) && (
                         <button onClick={() => {dispatch({type: 'BUY_PROP'}); dispatch({type: 'CLOSE_MODAL'})}} className="col-span-2 bg-green-600 hover:bg-green-500 py-3 rounded-lg font-black text-white shadow-lg border-b-4 border-green-800 active:scale-95 transition-all">
-                            COMPRAR
+                            COMPRAR PROPIEDAD
                         </button>
                     )}
                     {allowAuction && (
@@ -133,28 +152,30 @@ export const PropertyCard: React.FC<Props> = ({ state, dispatch, t, currentPlaye
                     )}
                     {isBlockedByGov && <div className="col-span-2 bg-red-900/50 p-2 text-center text-xs text-red-300 rounded font-bold border border-red-800">🚫 Gobierno de Izquierdas: Compra Prohibida</div>}
                     
-                    {isOwner && !t.isBroken && (
+                    {isOwner && !t.isBroken && !isShares && (
                         <>
-                        {/* BUILD BUTTON */}
+                        {/* BUILD BUTTON - PROMINENT */}
                         {hasMonopoly && !t.mortgaged && (t.houses || 0) < 5 && ( 
                             buildPermission.allowed ? (
-                                <button onClick={() => dispatch({type: 'BUILD_HOUSE', payload: {tId: t.id}})} className="col-span-2 bg-blue-600 hover:bg-blue-500 py-2 rounded font-bold text-white shadow-lg border-b-4 border-blue-800 active:scale-95">
-                                    Construir ({formatMoney(houseCost)})
+                                <button onClick={() => dispatch({type: 'BUILD_HOUSE', payload: {tId: t.id}})} className="col-span-2 bg-blue-600 hover:bg-blue-500 py-3 rounded-lg font-black text-white shadow-lg border-b-4 border-blue-800 active:scale-95 flex justify-between px-4 items-center group">
+                                    <span className="group-hover:translate-x-1 transition-transform">CONSTRUIR CASA</span>
+                                    <span className="bg-black/20 px-2 py-1 rounded text-xs font-mono">-${formatMoney(houseCost)}</span>
                                 </button> 
                             ) : (
-                                <div className="col-span-2 bg-slate-800 text-red-400 text-[10px] p-2 text-center border border-red-900 rounded">
+                                <div className="col-span-2 bg-slate-800 text-red-400 text-[10px] p-2 text-center border border-red-900 rounded font-bold">
                                     🚫 {buildPermission.reason}
                                 </div>
                             )
                         )}
+                        
                         {!hasMonopoly && !t.mortgaged && (
-                            <div className="col-span-2 text-center text-[10px] text-gray-500 italic py-1">
-                                Necesitas el grupo completo.
+                            <div className="col-span-2 text-center text-[10px] text-gray-500 italic py-2 bg-slate-800/50 rounded">
+                                Consigue todo el grupo de color para construir.
                             </div>
                         )}
                         
                         {((t.houses || 0) > 0 || t.hotel) && (
-                            <button onClick={() => dispatch({type: 'SELL_HOUSE', payload: {tId: t.id}})} className="col-span-2 bg-amber-600 hover:bg-amber-500 py-2 rounded font-bold text-white shadow-lg border-b-4 border-amber-800 active:scale-95">
+                            <button onClick={() => dispatch({type: 'SELL_HOUSE', payload: {tId: t.id}})} className="col-span-2 bg-amber-600 hover:bg-amber-500 py-2 rounded font-bold text-white shadow-lg border-b-4 border-amber-800 active:scale-95 text-xs">
                                 Vender Edificio (+{formatMoney(houseCost/2)})
                             </button>
                         )}
@@ -164,7 +185,7 @@ export const PropertyCard: React.FC<Props> = ({ state, dispatch, t, currentPlaye
                             </button>
                         )}
                         {t.mortgaged && (
-                            <button onClick={() => dispatch({type: 'UNMORTGAGE_PROP', payload: {tId: t.id}})} className="col-span-2 bg-emerald-600 hover:bg-emerald-500 py-2 rounded font-bold text-white shadow-lg border-b-4 border-emerald-800 active:scale-95">
+                            <button onClick={() => dispatch({type: 'UNMORTGAGE_PROP', payload: {tId: t.id}})} className="col-span-2 bg-emerald-600 hover:bg-emerald-500 py-2 rounded font-bold text-white shadow-lg border-b-4 border-emerald-800 active:scale-95 text-xs">
                                 Levantar Hipoteca (-{formatMoney(unmortgageCost)})
                             </button>
                         )}

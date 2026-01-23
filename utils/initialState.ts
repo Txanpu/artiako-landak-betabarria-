@@ -47,6 +47,11 @@ export const createInitialState = (): GameState => {
       loanPools: [],
       financialOptions: [],
       marketListings: [],
+      companies: [], 
+      
+      // NEW: POLYMARKET
+      predictionMarkets: [],
+      showPolymarket: false,
       
       // Extras
       bundleListings: [],
@@ -84,6 +89,7 @@ export const createInitialState = (): GameState => {
       casinoGame: null,
       casinoPlays: 0,
       showHeatmap: false,
+      heatmap: {},
       viewFullBoard: false, // Default zoom level normal
       activeEvent: null,
       showGreyhounds: false,
@@ -104,15 +110,19 @@ export const createInitialState = (): GameState => {
       rentCap: null,
       nextEventId: null,
       
-      // Graphics
-      heatmap: {},
-      
       // Roles
       fbiGuesses: {},
       vatIn: 0,
       vatOut: 0,
 
       // Utils
-      rngSeed: seedFromString(new Date().toISOString())
+      rngSeed: seedFromString(new Date().toISOString()),
+      
+      // Debt & Anarchy
+      pendingDebt: null,
+      anarchyActionPending: false,
+      
+      // Motocross
+      motocross: null
   };
 };

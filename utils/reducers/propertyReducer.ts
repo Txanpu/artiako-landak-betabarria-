@@ -1,11 +1,12 @@
 
-import { GameState } from '../../../types';
+import { GameState } from '../../types';
 import { buyProperty } from './property/acquisition';
 import { manageProperty } from './property/management';
 import { payRent } from './property/rent';
 import { commonPropertyReducer } from './property/common';
-import { getRandomWorker } from '../../../data/fioreData';
-import { formatMoney } from '../../gameLogic';
+import { handlePlataOPlomo } from './special/crimeLogic';
+import { getRandomWorker } from '../../data/fioreData';
+import { formatMoney, getRent } from '../gameLogic';
 
 export const propertyReducer = (state: GameState, action: any): GameState => {
     // Fiore Management Actions
@@ -62,6 +63,39 @@ export const propertyReducer = (state: GameState, action: any): GameState => {
             };
         }
         return state;
+    }
+
+    // --- ANARCHY RENT RESOLUTION ---
+    if (action.type === 'RESOLVE_ANARCHY_RENT') {
+        const { mode } = action.payload; // 'pay' | 'plata_o_plomo'
+        const player = state.players[state.currentPlayerIndex];
+        const tile = state.tiles[player.pos];
+
+        if (mode === 'plata_o_plomo') {
+            // Trigger minigame logic, clear anarchy pending
+            const newState = handlePlataOPlomo(state, tile.id);
+            return { ...newState, anarchyActionPending: false };
+        } 
+        else {
+            // Mode 'pay': Trigger standard rent payment logic manually
+            // We reuse payRent but ensure we handle debt if funds low
+            
+            const rent = getRent(tile, state.dice[0]+state.dice[1], state.tiles, state);
+            if (player.money >= rent) {
+                // Call standard payRent reducer logic (simulated by updating state directly to save complexity)
+                // Actually, calling payRent() function from rent.ts is cleaner if imported
+                const paidState = payRent(state);
+                return { ...paidState, anarchyActionPending: false };
+            } else {
+                // Trigger Debt
+                return { 
+                    ...state, 
+                    anarchyActionPending: false, 
+                    pendingDebt: { amount: rent, creditorId: tile.owner || 'E' },
+                    logs: [`⚠️ Fondos insuficientes para pagar renta en Anarquía. Deuda pendiente.`, ...state.logs]
+                };
+            }
+        }
     }
 
     switch (action.type) {

@@ -83,6 +83,61 @@ export const blackjackReducer = (state: GameState, action: any): GameState => {
              };
         }
 
+        case 'DOUBLE_DOWN_BLACKJACK': {
+            if (!state.blackjackState || state.blackjackState.phase !== 'playing') return state;
+            
+            // Validation: Only on first turn (2 cards)
+            if (state.blackjackState.playerHand.length !== 2) return state;
+
+            const pIdx = state.currentPlayerIndex;
+            const player = state.players[pIdx];
+            const currentBet = state.blackjackState.bet;
+
+            // Check Money
+            if (player.money < currentBet) return { ...state, logs: ['🚫 No tienes fondos para doblar.', ...state.logs] };
+
+            // 1. Pay Extra Bet
+            const newPlayers = [...state.players];
+            const p = { ...player, money: player.money - currentBet };
+            newPlayers[pIdx] = p;
+
+            // Transfer extra bet
+            let newEstadoMoney = state.estadoMoney;
+            const tile = state.tiles[player.pos];
+            if (tile.owner && typeof tile.owner === 'number') {
+                const oIdx = newPlayers.findIndex(x => x.id === tile.owner);
+                if (oIdx !== -1) newPlayers[oIdx] = { ...newPlayers[oIdx], money: newPlayers[oIdx].money + currentBet };
+            } else {
+                newEstadoMoney += currentBet;
+            }
+
+            // 2. Game Logic (1 Card only)
+            const newState = { ...state.blackjackState };
+            newState.bet = currentBet * 2; // Double the bet
+            const card = newState.deck.pop()!;
+            newState.playerHand = [...newState.playerHand, card];
+
+            const score = calculateHand(newState.playerHand);
+            
+            if (score > 21) {
+                newState.phase = 'result';
+                newState.resultMsg = '💥 TE PASASTE AL DOBLAR. PIERDES.';
+                newState.payout = 0;
+            } else {
+                // Force Stand
+                newState.phase = 'dealer';
+                newState.dealerHand = newState.dealerHand.map(c => ({...c, isHidden: false}));
+            }
+
+            return { 
+                ...state, 
+                players: newPlayers, 
+                estadoMoney: newEstadoMoney, 
+                blackjackState: newState,
+                logs: [`${player.name} dobla la apuesta a $${newState.bet}.`, ...state.logs]
+            };
+        }
+
         case 'DEALER_STEP_BLACKJACK': {
             if (!state.blackjackState || state.blackjackState.phase !== 'dealer') return state;
             

@@ -1,6 +1,6 @@
 
 import { GameState, Card } from '../../types';
-import { formatMoney } from '../gameLogic';
+import { formatMoney, getRandom } from '../gameLogic';
 
 export const generateDeck = (): Card[] => {
     const suits: ('♥' | '♦' | '♣' | '♠')[] = ['♥', '♦', '♣', '♠'];
@@ -17,9 +17,9 @@ export const generateDeck = (): Card[] => {
             deck.push({ suit, rank, value });
         }
     }
-    // Shuffle
+    // Secure Shuffle using getRandom
     for (let i = deck.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
+        const j = Math.floor(getRandom() * (i + 1));
         [deck[i], deck[j]] = [deck[j], deck[i]];
     }
     return deck;

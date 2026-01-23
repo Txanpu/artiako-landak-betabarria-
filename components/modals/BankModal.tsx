@@ -6,6 +6,7 @@ import { P2PLoanPanel } from './bank/P2PLoanPanel';
 import { SecuritizationPanel } from './bank/SecuritizationPanel';
 import { DerivativesPanel } from './bank/DerivativesPanel';
 import { OffshorePanel } from './bank/OffshorePanel';
+import { MonopolySharesPanel } from './bank/MonopolySharesPanel'; // Import
 
 interface BankModalProps {
     state: GameState;
@@ -13,26 +14,29 @@ interface BankModalProps {
 }
 
 export const BankModal: React.FC<BankModalProps> = ({ state, dispatch }) => {
-    const [activeTab, setActiveTab] = useState<'bank'|'p2p'|'pool'|'options'|'offshore'>('bank');
+    // Added 'companies' tab
+    const [activeTab, setActiveTab] = useState<'bank'|'p2p'|'pool'|'options'|'offshore'|'companies'>('bank');
     
     const currentPlayer = state.players[state.currentPlayerIndex];
-    
     const isFlorentino = currentPlayer?.role === 'florentino';
-    const isAtBank = currentPlayer && state.tiles[currentPlayer.pos].type === TileType.BANK;
+    const isAtBank = currentPlayer && state.tiles[currentPlayer.pos]?.type === TileType.BANK;
     const canAccessCorrupt = isFlorentino || isAtBank;
 
-    // Redirect if on restricted tab when not allowed
     useEffect(() => {
-        if (state.showBankModal && !canAccessCorrupt && (activeTab === 'bank' || activeTab === 'offshore')) {
-            setActiveTab('p2p');
+        if (state.showBankModal) {
+            if (!canAccessCorrupt && (activeTab === 'bank' || activeTab === 'offshore')) {
+                setActiveTab('p2p');
+            }
         }
-        // Auto-select bank if it's the main reason to open modal (landing on tile)
-        if (state.showBankModal && canAccessCorrupt && activeTab !== 'bank' && isAtBank) {
+    }, [state.showBankModal, canAccessCorrupt, activeTab]); 
+
+    useEffect(() => {
+        if (state.showBankModal && canAccessCorrupt && isAtBank) {
             setActiveTab('bank');
         }
-    }, [state.showBankModal, canAccessCorrupt, activeTab, isAtBank]);
+    }, [state.showBankModal]);
 
-    if (!state.showBankModal) return null;
+    if (!state.showBankModal || !currentPlayer) return null;
 
     return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
@@ -57,6 +61,7 @@ export const BankModal: React.FC<BankModalProps> = ({ state, dispatch }) => {
                       <button onClick={()=>setActiveTab('p2p')} className={`px-3 py-1 rounded text-xs font-bold whitespace-nowrap ${activeTab==='p2p'?'bg-blue-600 text-white':'text-gray-400 hover:text-white'}`}>P2P</button>
                       <button onClick={()=>setActiveTab('pool')} className={`px-3 py-1 rounded text-xs font-bold whitespace-nowrap ${activeTab==='pool'?'bg-purple-600 text-white':'text-gray-400 hover:text-white'}`}>Titulizar</button>
                       <button onClick={()=>setActiveTab('options')} className={`px-3 py-1 rounded text-xs font-bold whitespace-nowrap ${activeTab==='options'?'bg-green-600 text-white':'text-gray-400 hover:text-white'}`}>Opciones</button>
+                      <button onClick={()=>setActiveTab('companies')} className={`px-3 py-1 rounded text-xs font-bold whitespace-nowrap ${activeTab==='companies'?'bg-orange-600 text-white':'text-gray-400 hover:text-white'}`}>Acciones</button>
                   </div>
 
                   <div className="flex-1 overflow-y-auto space-y-4 pr-2">
@@ -73,6 +78,7 @@ export const BankModal: React.FC<BankModalProps> = ({ state, dispatch }) => {
                       {activeTab === 'p2p' && <P2PLoanPanel players={state.players} currentPlayerId={currentPlayer.id} dispatch={dispatch} />}
                       {activeTab === 'pool' && <SecuritizationPanel state={state} currentPlayer={currentPlayer} dispatch={dispatch} />}
                       {activeTab === 'options' && <DerivativesPanel dispatch={dispatch} state={state} />}
+                      {activeTab === 'companies' && <MonopolySharesPanel state={state} dispatch={dispatch} />}
                   </div>
                   
                   <button onClick={() => dispatch({type: 'CLOSE_BANK_MODAL'})} className="mt-4 bg-slate-700 hover:bg-slate-600 py-2 rounded text-white font-bold">Cerrar Banca</button>

@@ -69,6 +69,9 @@ export const shouldBlockSalary = (state: GameState, playerId: number): boolean =
 
 // OKUPA: 5% Occupation Chance
 export const checkOkupaOccupation = (player: Player, tile: TileData): { success: boolean, msg?: string } => {
+    // COMPANY PROTECTION
+    if (tile.companyId) return { success: false };
+
     if (player.role === 'okupa' && tile.type === TileType.PROP && tile.owner === 'E') {
         if (Math.random() < 0.05) {
             return { success: true, msg: `🏚️ ${player.name} (Okupa) ha ocupado ${tile.name} (antes del Estado).` };
@@ -85,6 +88,9 @@ export const checkOkupaRentSkip = (player: Player): boolean => {
 
 // OKUPA: 30% Destruction Chance (Remove 1 House if not Hotel)
 export const checkOkupaDestruction = (player: Player, tile: TileData): { success: boolean, msg?: string } => {
+    // COMPANY PROTECTION
+    if (tile.companyId) return { success: false, msg: `🛡️ ${tile.name} pertenece a una S.A. y tiene seguridad privada.` };
+
     if (player.role === 'okupa' && tile.type === TileType.PROP && tile.owner !== null && tile.owner !== player.id && tile.owner !== 'E') {
         // Only if there are houses and NO hotel
         if ((tile.houses || 0) > 0 && !tile.hotel) {

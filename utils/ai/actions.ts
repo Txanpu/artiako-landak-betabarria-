@@ -49,26 +49,52 @@ export const getBotBuildActions = (state: GameState, player: Player): number[] =
 
     const actions: number[] = [];
     let budget = player.money - CASH_BUFFER;
+    const allowUneven = state.gov === 'libertarian' || state.gov === 'anarchy';
 
     for (const group of buildableGroups) {
-        // Even building rule logic
-        const minHouses = Math.min(...group.map(t => t.houses || 0));
-        // Max 5 levels (4 houses + 1 hotel)
-        if (minHouses >= 5) continue;
+        // EVEN BUILDING LOGIC (Standard / Horizontal Law)
+        if (!allowUneven) {
+            const minHouses = Math.min(...group.map(t => t.houses || 0));
+            if (minHouses >= 5) continue;
 
-        const candidates = group.filter(t => (t.houses || 0) === minHouses && !t.mortgaged && !t.hotel);
-        
-        for (const t of candidates) {
-            const cost = getHouseCost(t);
-            // Check global availability limits
-            const isHotel = t.houses === 4;
-            const avail = isHotel ? state.hotelsAvail > 0 : state.housesAvail > 0;
+            const candidates = group.filter(t => (t.houses || 0) === minHouses && !t.mortgaged && !t.hotel);
             
-            if (budget >= cost && avail) {
-                actions.push(t.id);
-                budget -= cost;
+            for (const t of candidates) {
+                const cost = getHouseCost(t);
+                const isHotel = t.houses === 4;
+                const avail = isHotel ? state.hotelsAvail > 0 : state.housesAvail > 0;
+                
+                if (budget >= cost && avail) {
+                    actions.push(t.id);
+                    budget -= cost;
+                }
+            }
+        } 
+        // UNEVEN BUILDING LOGIC (Libertarian/Anarchy - Focus Fire)
+        else {
+            // Sort group by base price (highest rent potential first)
+            const sortedGroup = [...group].sort((a, b) => (b.price||0) - (a.price||0));
+            
+            for (const t of sortedGroup) {
+                if (t.mortgaged || t.hotel) continue;
+                
+                const current = t.houses || 0;
+                // Try to max out this property before moving to next
+                if (current < 5) {
+                    const cost = getHouseCost(t);
+                    const isHotel = current === 4;
+                    const avail = isHotel ? state.hotelsAvail > 0 : state.housesAvail > 0;
+                    
+                    if (budget >= cost && avail) {
+                        actions.push(t.id);
+                        budget -= cost;
+                        // Stop after queueing one build per tick per group to allow UI refresh
+                        break; 
+                    }
+                }
             }
         }
+
         if (budget < 100) break; 
     }
 

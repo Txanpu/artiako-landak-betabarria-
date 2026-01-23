@@ -152,7 +152,10 @@ export const getHouseCost = (tile: TileData): number => {
 };
 
 export const ownsFullGroup = (player: any, tile: TileData, tiles: TileData[]) => {
+    // FIX: Guard against undefined player to prevent 'reading id' error
+    if (!player || !player.id) return false;
     if (!tile.color) return false;
+    
     const group = tiles.filter(t => t.color === tile.color);
     return group.every(t => t.owner === player.id);
 };

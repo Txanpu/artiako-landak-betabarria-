@@ -1,16 +1,17 @@
 
 import React from 'react';
-import { TradeOffer, Player, TileData } from '../../../types';
+import { TradeOffer, Player, TileData, MonopolyCompany } from '../../../types';
 
 interface Props {
     trade: TradeOffer;
     players: Player[];
     tiles: TileData[];
+    companies?: MonopolyCompany[]; // NEW
     currentPlayerId: number;
     dispatch: React.Dispatch<any>;
 }
 
-export const ActiveTradeView: React.FC<Props> = ({ trade, players, tiles, currentPlayerId, dispatch }) => {
+export const ActiveTradeView: React.FC<Props> = ({ trade, players, tiles, companies, currentPlayerId, dispatch }) => {
     const initiator = players.find(p => p.id === trade.initiatorId);
     const target = players.find(p => p.id === trade.targetId);
     
@@ -46,14 +47,26 @@ export const ActiveTradeView: React.FC<Props> = ({ trade, players, tiles, curren
                         </div>
                         <div className="text-green-400 font-bold mb-1 font-mono text-lg">${trade.offeredMoney}</div>
                         {(trade.offeredFarlopa || 0) > 0 && <div className="text-white font-bold mb-1 text-sm bg-black/30 px-2 py-0.5 rounded inline-block">❄️ {trade.offeredFarlopa}u</div>}
+                        
                         <div className="space-y-1 mt-2">
+                            {/* Properties */}
                             {trade.offeredProps.map(pid => (
                                 <div key={pid} className="text-xs text-white bg-slate-800 px-2 py-1 rounded border border-slate-600 flex items-center gap-2">
                                     <div className="w-2 h-2 rounded-full" style={{backgroundColor: tiles[pid].color ? tiles[pid].color : '#ccc'}}></div>
                                     <span className="truncate">{tiles[pid].name}</span>
                                 </div>
                             ))}
-                            {trade.offeredProps.length === 0 && trade.offeredMoney === 0 && (trade.offeredFarlopa || 0) === 0 && <div className="text-gray-600 text-xs italic">Nada</div>}
+                            {/* Shares */}
+                            {trade.offeredShares && trade.offeredShares.map((share, i) => {
+                                const compName = companies?.find(c => c.id === share.companyId)?.name || 'Sociedad';
+                                return (
+                                    <div key={i} className="text-xs text-orange-300 bg-slate-800 px-2 py-1 rounded border border-orange-900 flex items-center gap-2">
+                                        <span>🏢 {share.count} Acciones de {compName}</span>
+                                    </div>
+                                );
+                            })}
+
+                            {trade.offeredProps.length === 0 && trade.offeredMoney === 0 && (trade.offeredFarlopa || 0) === 0 && (!trade.offeredShares || trade.offeredShares.length === 0) && <div className="text-gray-600 text-xs italic">Nada</div>}
                         </div>
                     </div>
 
