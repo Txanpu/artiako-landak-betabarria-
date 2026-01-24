@@ -44,17 +44,17 @@ export const handlePlataOPlomo = (state: GameState, tId: number): GameState => {
             }
         }
     } else {
-        // FALLO (Fail): Pay double + Hospital (Bird Center ID 24)
+        // FALLO (Fail): Pay double + Hospital (Medikue ID 56)
         const penalty = rent * 2;
         logs.push(`🏥 PLATA O PLOMO: ¡${owner.name} se defiende! ${player.name} recibe una paliza.`);
         logs.push(`💸 Castigo: Pagas doble renta ($${formatMoney(penalty)}).`);
         
         // Pay Double
-        const victim = { ...player, money: player.money - penalty, skipTurns: 1, pos: 24 }; // ID 24 is Bird Center
+        const victim = { ...player, money: player.money - penalty, skipTurns: 1, pos: 56 }; // ID 56 is Medikue
         newPlayers[pIdx] = victim;
         newPlayers[ownerIdx] = { ...owner, money: owner.money + penalty };
         
-        logs.push(`🚑 ${player.name} ha sido enviado al Bird Center (Hospital) para recuperarse.`);
+        logs.push(`🚑 ${player.name} ha sido enviado al Medikue (Hospital) para recuperarse.`);
     }
 
     return {
@@ -90,10 +90,10 @@ export const handleBlackMarket = (state: GameState, tradeType: 'sell_drug' | 'hi
                 
                 newPlayers[pIdx] = { ...player, money: player.money - 500 };
                 
-                // Send to Bird Center (24) instead of Jail
-                newPlayers[tIdx] = { ...target, skipTurns: 1, pos: 24 }; 
+                // Send to Medikue (56) instead of Jail/BirdCenter
+                newPlayers[tIdx] = { ...target, skipTurns: 1, pos: 56 }; 
                 
-                log = `🔫 Mercado Negro: ${player.name} contrata un sicario. ${target.name} acaba en el Bird Center (Hospital).`;
+                log = `🔫 Mercado Negro: ${player.name} contrata un sicario. ${target.name} acaba en el Medikue (Hospital).`;
             }
         } else {
             return state;

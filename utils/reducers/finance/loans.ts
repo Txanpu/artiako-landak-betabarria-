@@ -25,6 +25,11 @@ export const loansReducer = (state: GameState, action: any): GameState => {
                 if (lender.money < amount) {
                     return { ...state, logs: [`❌ Préstamo fallido: ${lender.name} no tiene fondos suficientes.`, ...state.logs] };
                 }
+            } else {
+                // CORRUPT BANK CHECK: State needs funds
+                if (state.estadoMoney < amount) {
+                    return { ...state, logs: [`❌ Banca Corrupta Fallida: El Estado no tiene fondos (${formatMoney(state.estadoMoney)}) para prestar.`, ...state.logs] };
+                }
             }
 
             // Calculations

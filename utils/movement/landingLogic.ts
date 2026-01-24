@@ -221,6 +221,10 @@ export const handleLandingLogic = (state: GameState): GameState => {
     let taxLog = null;
     let newEstadoMoney = state.estadoMoney;
     let newFbiPot = state.fbiPot;
+    
+    // FBI Reward Slots from Reducer (If not undefined)
+    let fbiRewardSlots = state.fbiExpropriationSlots || 0;
+    let fbiRewardQueued = state.fbiRewardQueued || false;
 
     if (tile.type === TileType.TAX) {
         
@@ -251,6 +255,13 @@ export const handleLandingLogic = (state: GameState): GameState => {
                 taxLog = `💸 IMPUESTOS: Exención fiscal por Gobierno actual (0%).`;
             }
         }
+
+        // --- NEW: FBI REWARD CLAIM ---
+        if (player.role === 'fbi' && fbiRewardQueued) {
+            fbiRewardSlots = 2; // Grant 2 expropriations
+            fbiRewardQueued = false; // Consume Flag
+            roleLogs.push(`🕵️ FBI: Has reportado el éxito de la operación en Hacienda. ¡Recibes 2 Cartas de Expropiación!`);
+        }
     }
 
     // Apply Player Updates
@@ -275,7 +286,10 @@ export const handleLandingLogic = (state: GameState): GameState => {
         lastMovementPos: null,
         // Set new flags
         pendingDebt,
-        anarchyActionPending
+        anarchyActionPending,
+        // Update FBI Props
+        fbiExpropriationSlots: fbiRewardSlots,
+        fbiRewardQueued: fbiRewardQueued
     };
 
     if (taxLog) {
@@ -284,6 +298,16 @@ export const handleLandingLogic = (state: GameState): GameState => {
 
     if (tile.type === TileType.EVENT) {
         const evtRes = drawEvent(finalState, pIdx);
+        
+        // --- RECURSIVE MOVEMENT CHECK ---
+        // If event moved player, we must trigger landing again for new tile.
+        if (evtRes.players && evtRes.players[pIdx].pos !== newPos) {
+            // Merge event changes first
+            const intermediateState = { ...finalState, ...evtRes };
+            // Recursive call for new location
+            return handleLandingLogic(intermediateState);
+        }
+        
         finalState = { ...finalState, ...evtRes };
     }
 

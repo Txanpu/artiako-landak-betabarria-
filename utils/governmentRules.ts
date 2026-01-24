@@ -22,7 +22,7 @@ export const calculateGoSalary = (gov: GovernmentType, player: Player): number =
             return 0; // Aliens/Helicopters get nothing
 
         case 'libertarian':
-            return 0; // No state handouts
+            return 200; // Standard amount, but check Funds in Reducer (NO HAY PLATA check)
 
         case 'anarchy':
             return 0; // No state
@@ -53,9 +53,6 @@ export const getJailRules = (gov: GovernmentType, player?: Player) => {
 // 3. BUILDING PERMISSIONS
 export const canBuild = (gov: GovernmentType, tile: TileData): { allowed: boolean, reason?: string } => {
     // In Left Gov, building is allowed but buying is restricted. 
-    // Actually, "prohibida especulación" implies buying mostly.
-    // Let's allow building but maybe more expensive? For now, stick to Buy Block.
-    
     if (gov === 'anarchy' && tile.isBroken) {
         return { allowed: false, reason: 'Propiedad en ruinas. Repárala antes de construir.' };
     }
@@ -72,9 +69,11 @@ export const canAuction = (gov: GovernmentType): boolean => {
 // 5. DIRECT BUY PERMISSIONS
 export const canBuyDirectly = (gov: GovernmentType): boolean => {
     // Left: NO BUYING PRIVATE PROPERTY from bank
-    if (gov === 'left') return false;
-    // Authoritarian: YES (Decretazo - Fast Buy)
-    return ['authoritarian', 'anarchy', 'right', 'libertarian'].includes(gov);
+    // Right: NO DIRECT BUY (Auction Only - Free Market Competition)
+    if (gov === 'left' || gov === 'right') return false;
+    
+    // Authoritarian, Anarchy, Libertarian: YES
+    return ['authoritarian', 'anarchy', 'libertarian'].includes(gov);
 };
 
 // 6. TRANSPORT PERMISSIONS

@@ -28,9 +28,10 @@ export const fbiReducer = (state: GameState, action: any): GameState => {
             }
         });
 
+        // MODIFIED: If all guessed, set flag fbiRewardQueued. Do not grant slots yet.
         if (allGuessed) {
-            logMsg += " ¡EL FBI HA DESCUBIERTO A TODOS! Recompensa: Expropiar 2 casillas libres.";
-            return { ...state, fbiGuesses: newGuesses, fbiExpropriationSlots: 2, logs: [logMsg, ...state.logs] }; 
+            logMsg += " ¡TODOS IDENTIFICADOS! Debes ir a Hacienda para reclamar tu recompensa (2 expropiaciones).";
+            return { ...state, fbiGuesses: newGuesses, fbiRewardQueued: true, logs: [logMsg, ...state.logs] }; 
         }
 
         return { ...state, fbiGuesses: newGuesses, logs: [logMsg, ...state.logs] }; 

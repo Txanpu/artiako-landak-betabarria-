@@ -50,7 +50,7 @@ export const PERIMETER_TILES: Partial<TileData>[] = [
   p('Casino Blackjack', 'pink', 300, 'Rosa', 'casino_bj'), // 27
   p('Txokoa', 'blue', 210, 'Rojo'), // 28
   { type: TileType.TAX, name: 'Hacienda' }, // 29
-  p('Casa Minte', 'blue', 230, 'Rojo', 'gym'), // 30
+  p('Casa Minte', 'blue', 230, 'Rojo'), // 30 - REMOVED GYM
   p('Fiore', 'green', 240, 'Verde', 'fiore'), // 31
 
   // --- CORNER 2 (Top-Left) ---

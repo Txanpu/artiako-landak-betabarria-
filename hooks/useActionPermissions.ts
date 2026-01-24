@@ -11,6 +11,8 @@ export const useActionPermissions = (state: GameState, player: Player) => {
     
     const canBuy = isOwnerless && player.money >= (currentTile.price || 0) && canBuyDirectly(state.gov);
     const allowAuction = isOwnerless && canAuction(state.gov);
+    const canStateBuy = isOwnerless && state.gov === 'authoritarian'; // New: State Buy Option
+    
     const isBlocked = isOwnerless && state.gov === 'left';
     
     // 2. Roles
@@ -42,15 +44,28 @@ export const useActionPermissions = (state: GameState, player: Player) => {
     // 5. Global Blocks
     const isElectionOpen = state.election && state.election.isOpen;
 
+    // 6. Mandatory Resolution (Must Buy or Auction before leaving)
+    // Rule: If land on unowned, must resolve unless Anarchy/Libertarian OR if no action is possible.
+    const isExceptionGov = ['anarchy', 'libertarian'].includes(state.gov);
+    const canDoSomething = canBuy || allowAuction || canStateBuy;
+    
+    // BUG FIX: Only enforce resolution if we have moved this turn (Rolled or Doubles Chain). 
+    // If we are at the literal start of the turn (not rolled, streak 0), we can leave freely.
+    const isStartOfTurn = !state.rolled && player.doubleStreak === 0;
+    
+    const mustResolveProperty = !isStartOfTurn && isOwnerless && !isExceptionGov && canDoSomething;
+
     return {
         currentTile,
         actions: {
             canBuy,
             allowAuction,
+            canStateBuy, // Exported
             mustPayRent,
             isBlocked,
             canBuyFarlopa,
-            canGetFreeFarlopa
+            canGetFreeFarlopa,
+            mustResolveProperty
         },
         roles: {
             isHacker,

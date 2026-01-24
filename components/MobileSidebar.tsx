@@ -28,10 +28,19 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({
     const isOwnerless = currentTile?.type === TileType.PROP && currentTile.owner === null;
     const mustPayRent = currentTile?.type === TileType.PROP && currentTile.owner !== null && currentTile.owner !== currentPlayer?.id && currentTile.owner !== 'E';
     
-    const canBuy = isOwnerless && currentPlayer && currentPlayer.money >= (currentTile?.price || 0) && canBuyDirectly(state.gov);
-    const allowAuction = isOwnerless && canAuction(state.gov);
-    const isBlocked = isOwnerless && state.gov === 'left';
+    const gov = state.gov;
+    const canBuy = isOwnerless && currentPlayer && currentPlayer.money >= (currentTile?.price || 0) && canBuyDirectly(gov);
+    const allowAuction = isOwnerless && canAuction(gov);
+    const canStateBuy = isOwnerless && gov === 'authoritarian'; // New
+    
+    const isBlocked = isOwnerless && gov === 'left';
     const isHacker = currentPlayer?.role === 'hacker';
+
+    // NEW: Mandatory Resolution Logic
+    const isExceptionGov = ['anarchy', 'libertarian'].includes(gov);
+    const canDoSomething = canBuy || allowAuction || canStateBuy;
+    const isStartOfTurn = !state.rolled && currentPlayer?.doubleStreak === 0;
+    const mustResolveProperty = !isStartOfTurn && isOwnerless && !isExceptionGov && canDoSomething;
 
     // Drugs Logic
     const isNight = state.world.isNight;
@@ -48,6 +57,9 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({
     const d1 = displayDice[0] ?? 1;
     const d2 = displayDice[1] ?? 1;
     const d3 = displayDice[2] ?? 1;
+
+    // Determine View Mode
+    const showRollMode = !state.rolled && state.pendingMoves === 0 && !isRolling && !mustResolveProperty;
 
     return (
         <div className="lg:hidden">
@@ -124,16 +136,18 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({
                             <div className="grid grid-cols-4 gap-1">
                                 {/* MAIN ACTION */}
                                 <div className="col-span-4">
-                                    {!state.rolled && state.pendingMoves === 0 && !isRolling ? (
-                                        <button 
-                                            onClick={onRoll} 
-                                            disabled={isRolling}
-                                            className={`w-full py-3 rounded-lg font-black text-white shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2
-                                                ${isHigh ? 'bg-gradient-to-r from-pink-600 to-purple-600' : 'bg-gradient-to-r from-emerald-600 to-green-600'}
-                                            `}
-                                        >
-                                            {isHigh ? 'TIRADA TRIPLE' : 'TIRAR DADOS'} 🎲
-                                        </button>
+                                    {showRollMode ? (
+                                        <>
+                                            <button 
+                                                onClick={onRoll} 
+                                                disabled={isRolling}
+                                                className={`w-full py-3 rounded-lg font-black text-white shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2 disabled:opacity-50 disabled:grayscale
+                                                    ${isHigh ? 'bg-gradient-to-r from-pink-600 to-purple-600' : 'bg-gradient-to-r from-emerald-600 to-green-600'}
+                                                `}
+                                            >
+                                                {isHigh ? 'TIRADA TRIPLE' : 'TIRAR DADOS'} 🎲
+                                            </button>
+                                        </>
                                     ) : state.pendingMoves > 0 ? (
                                         <div className="bg-yellow-900/30 border border-yellow-600/50 text-yellow-500 text-center py-2 rounded text-xs font-bold animate-pulse">
                                             MOVIENDO...
@@ -150,6 +164,12 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({
                                                     SUBASTAR
                                                 </button>
                                             )}
+                                            {canStateBuy && (
+                                                <button onClick={() => dispatch({type:'DECLINE_BUY', payload: {tId: currentTile?.id}})} className="bg-purple-900 text-purple-200 border border-purple-600 py-2 rounded font-bold text-xs hover:bg-purple-800">
+                                                    RECHAZAR (ESTADO)
+                                                </button>
+                                            )}
+
                                             {mustPayRent && (
                                                 <button onClick={() => dispatch({type:'PAY_RENT'})} className="col-span-2 bg-red-600 text-white py-3 rounded font-bold text-xs hover:bg-red-500 animate-pulse">
                                                     PAGAR RENTA
@@ -170,14 +190,20 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({
                                                     Recoger Paquete
                                                 </button>
                                             )}
-                                            {hasStash && !isHigh && !state.rolled && (
+                                            {hasStash && !isHigh && !state.rolled && !mustResolveProperty && (
                                                 <button onClick={() => dispatch({type:'CONSUME_FARLOPA'})} className="col-span-2 bg-slate-700 text-white py-1 rounded text-[10px]">
                                                     Usar Item ❄️
                                                 </button>
                                             )}
 
-                                            <button onClick={() => dispatch({type:'END_TURN'})} className="col-span-2 bg-slate-700 text-white py-2 rounded font-bold text-xs border-b-2 border-slate-900 hover:bg-slate-600 mt-1">
-                                                FINALIZAR TURNO
+                                            <button 
+                                                onClick={() => dispatch({type:'END_TURN'})} 
+                                                disabled={mustResolveProperty}
+                                                className={`col-span-2 py-2 rounded font-bold text-xs border-b-2 border-slate-900 mt-1
+                                                    ${mustResolveProperty ? 'bg-slate-800 text-gray-600' : 'bg-slate-700 text-white hover:bg-slate-600'}
+                                                `}
+                                            >
+                                                {mustResolveProperty ? 'GESTIONA PROPIEDAD' : 'FINALIZAR TURNO'}
                                             </button>
                                         </div>
                                     )}

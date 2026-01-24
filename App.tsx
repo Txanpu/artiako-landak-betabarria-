@@ -27,7 +27,8 @@ import { GovGuideModal } from './components/modals/GovGuideModal';
 import { WeatherModal } from './components/modals/WeatherModal'; 
 import { FbiModal } from './components/modals/FbiModal'; 
 import { AvatarSelectorModal } from './components/modals/AvatarSelectorModal'; 
-import { LogsModal } from './components/modals/LogsModal'; 
+import { LogsModal } from './components/modals/LogsModal';
+import { PauseModal } from './components/modals/PauseModal'; // NEW
 import { GameState } from './types';
 import { createInitialState, makeHistory, makeWatchdog } from './utils/gameLogic';
 import { gameReducer } from './utils/gameReducer';
@@ -50,8 +51,14 @@ const App: React.FC = () => {
 
   const handleKeyDown = (e: KeyboardEvent) => {
     if (e.target instanceof HTMLInputElement) return;
-    if (e.key.toLowerCase() === 's') { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); alert('💾 Guardado'); }
-    if (e.key.toLowerCase() === 'l') { const saved = localStorage.getItem(SAVE_KEY); if (saved) dispatch({type:'LOAD_GAME', payload: JSON.parse(saved)}); }
+    
+    // PAUSE MENU (ESCAPE)
+    if (e.key === 'Escape') {
+        dispatch({ type: 'TOGGLE_PAUSE' });
+        return;
+    }
+
+    if (e.key.toLowerCase() === 's' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); localStorage.setItem(SAVE_KEY, JSON.stringify(state)); alert('💾 Guardado Rápido (Ctrl+S)'); }
     
     // NEW SHORTCUTS
     if (e.key.toLowerCase() === 't') { dispatch({ type: 'TOGGLE_LOGS_MODAL' }); }
@@ -132,6 +139,7 @@ const App: React.FC = () => {
       <FbiModal state={state} dispatch={dispatch} />
       <AvatarSelectorModal state={state} dispatch={dispatch} />
       <LogsModal state={state} dispatch={dispatch} />
+      <PauseModal state={state} dispatch={dispatch} />
 
       {setupOpen && <SetupModal onStartGame={(p) => { dispatch({type:'START_GAME', payload: p}); setSetupOpen(false); }} />}
       

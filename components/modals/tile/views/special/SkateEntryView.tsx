@@ -21,6 +21,7 @@ export const SkateEntryView: React.FC<Props> = ({ state, dispatch, t, currentPla
     const canBuyDirect = isOwnerlessProp && isAtLocation && currentPlayer && currentPlayer.money >= (t.price || 0) && canBuyDirectly(state.gov);
     const allowAuction = isOwnerlessProp && isAtLocation && canAuction(state.gov);
     const buildPermission = canBuild(state.gov, t);
+    const isAuthoritarian = state.gov === 'authoritarian';
     
     const mortgageValue = Math.floor((t.price || 0) * 0.5);
     const houseCost = getHouseCost(t);
@@ -98,6 +99,12 @@ export const SkateEntryView: React.FC<Props> = ({ state, dispatch, t, currentPla
                     {allowAuction && (
                         <button onClick={() => {dispatch({type: 'START_AUCTION', payload: t.id}); close()}} className="col-span-2 bg-purple-700 hover:bg-purple-600 text-white font-bold py-2 rounded text-sm shadow">
                             Subastar
+                        </button>
+                    )}
+                    
+                    {isAuthoritarian && isOwnerlessProp && isAtLocation && (
+                        <button onClick={() => dispatch({type: 'DECLINE_BUY', payload: {tId: t.id}})} className="col-span-2 bg-purple-900 text-white py-2 rounded font-bold text-xs">
+                            RECHAZAR (ESTADO COMPRA)
                         </button>
                     )}
                     

@@ -26,6 +26,7 @@ export const GymEntryView: React.FC<Props> = ({ state, dispatch, t, currentPlaye
 
     const canBuy = t.owner === null && currentPlayer.money >= (t.price || 0) && canBuyDirectly(state.gov);
     const allowAuction = t.owner === null && canAuction(state.gov);
+    const isAuthoritarian = state.gov === 'authoritarian';
 
     return (
         <div className="bg-[#2e2e2e] text-white w-full max-w-sm rounded-lg overflow-hidden shadow-2xl border-4 border-slate-700 animate-in zoom-in-95 relative" onClick={e => e.stopPropagation()}>
@@ -52,6 +53,13 @@ export const GymEntryView: React.FC<Props> = ({ state, dispatch, t, currentPlaye
                         <div className="text-sm text-gray-300 mb-2">Este gimnasio está buscando un nuevo líder.</div>
                         {canBuy && <button onClick={() => { dispatch({type: 'BUY_PROP'}); close(); }} className="w-full bg-blue-600 hover:bg-blue-500 py-3 rounded font-bold shadow-lg">Comprar Licencia ({formatMoney(t.price||0)})</button>}
                         {allowAuction && <button onClick={() => { dispatch({type: 'START_AUCTION', payload: t.id}); close(); }} className="w-full bg-purple-600 hover:bg-purple-500 py-3 rounded font-bold shadow-lg">Subastar Licencia</button>}
+                        
+                        {isAuthoritarian && isAtLocation && (
+                            <button onClick={() => dispatch({type: 'DECLINE_BUY', payload: {tId: t.id}})} className="w-full bg-purple-900 text-white py-2 font-bold text-xs">
+                                RECHAZAR (ESTADO COMPRA)
+                            </button>
+                        )}
+                        
                         <div className="text-xs text-gray-500">Solo Gobiernos Autoritarios o Anarquistas permiten compra directa.</div>
                     </div>
                 ) : isAtLocation ? (

@@ -18,6 +18,7 @@ export const UtilityBill: React.FC<Props> = ({ state, dispatch, t, currentPlayer
     
     const canBuyDirect = isOwnerlessProp && isAtLocation && currentPlayer && currentPlayer.money >= (t.price || 0) && canBuyDirectly(state.gov);
     const allowAuction = isOwnerlessProp && isAtLocation && canAuction(state.gov);
+    const isAuthoritarian = state.gov === 'authoritarian';
     
     const mortgageValue = Math.floor((t.price || 0) * 0.5);
 
@@ -67,6 +68,12 @@ export const UtilityBill: React.FC<Props> = ({ state, dispatch, t, currentPlayer
                     {canBuyDirect && <button onClick={() => {dispatch({type: 'BUY_PROP'}); dispatch({type: 'CLOSE_MODAL'})}} className="w-full bg-black text-white py-2 font-bold hover:bg-slate-800 uppercase tracking-tighter">Adquirir Concesión</button>}
                     {allowAuction && <button onClick={() => {dispatch({type: 'START_AUCTION', payload: t.id}); dispatch({type: 'CLOSE_MODAL'})}} className="w-full border-2 border-black text-black py-2 font-bold hover:bg-slate-100">Licitación Pública (Subasta)</button>}
                     
+                    {isAuthoritarian && isOwnerlessProp && isAtLocation && (
+                        <button onClick={() => dispatch({type: 'DECLINE_BUY', payload: {tId: t.id}})} className="w-full bg-purple-900 text-white py-2 font-bold text-xs">
+                            RECHAZAR (ESTADO COMPRA)
+                        </button>
+                    )}
+
                     {/* ACTIVE ABILITY SABOTAGE */}
                     {isOwner && isAtLocation && !t.mortgaged && (
                         <button onClick={() => {dispatch({type: 'SABOTAGE_SUPPLY', payload: {tId: t.id}}); dispatch({type: 'CLOSE_MODAL'})}} className="w-full bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-2 uppercase border-b-4 border-yellow-800 active:scale-95">

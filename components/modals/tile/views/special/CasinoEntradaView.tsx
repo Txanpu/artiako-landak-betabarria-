@@ -19,6 +19,7 @@ export const CasinoEntradaView: React.FC<Props> = ({ state, dispatch, t, current
     // Authorization Logic
     const canBuyDirect = isOwnerlessProp && isAtLocation && currentPlayer && currentPlayer.money >= (t.price || 0) && canBuyDirectly(state.gov);
     const allowAuction = isOwnerlessProp && isAtLocation && canAuction(state.gov);
+    const isAuthoritarian = state.gov === 'authoritarian';
     
     const mortgageValue = Math.floor((t.price || 0) * 0.5);
     const isRoulette = t.subtype === 'casino_roulette';
@@ -104,6 +105,12 @@ export const CasinoEntradaView: React.FC<Props> = ({ state, dispatch, t, current
                         </button>
                     )}
                     
+                    {isAuthoritarian && isOwnerlessProp && isAtLocation && (
+                        <button onClick={() => dispatch({type: 'DECLINE_BUY', payload: {tId: t.id}})} className="w-full bg-purple-900 text-white py-2 font-bold text-xs">
+                            RECHAZAR (ESTADO COMPRA)
+                        </button>
+                    )}
+
                     {isOwner && !t.mortgaged && (
                         <button onClick={() => dispatch({type: 'MORTGAGE_PROP', payload: {tId: t.id}})} className="w-full border border-red-500/50 text-red-400 hover:bg-red-900/30 py-2 rounded text-xs font-bold uppercase">
                             Hipotecar Negocio (+{formatMoney(mortgageValue)})

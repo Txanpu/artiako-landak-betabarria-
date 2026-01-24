@@ -33,6 +33,7 @@ export const createInitialState = (): GameState => {
       govTurnsLeft: 7,
       currentGovConfig: GOV_CONFIGS[startGov], 
       gameStarted: false,
+      isPaused: false, // NEW
       selectedTileId: null,
       
       // MOVEMENT STATE

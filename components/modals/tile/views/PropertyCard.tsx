@@ -33,6 +33,7 @@ export const PropertyCard: React.FC<Props> = ({ state, dispatch, t, currentPlaye
     const forceBuy = isOwnerlessProp && isAtLocation && !allowAuction && canBuyDirect;
     
     const isBlockedByGov = isOwnerlessProp && isAtLocation && state.gov === 'left';
+    const isAuthoritarian = state.gov === 'authoritarian';
     
     const mortgageValue = Math.floor((t.price || 0) * 0.5);
     const unmortgageCost = Math.floor(mortgageValue * 1.1);
@@ -150,6 +151,17 @@ export const PropertyCard: React.FC<Props> = ({ state, dispatch, t, currentPlaye
                             SUBASTAR
                         </button>
                     )}
+                    
+                    {/* AUTHORITARIAN DECLINE BUTTON */}
+                    {isAuthoritarian && isOwnerlessProp && isAtLocation && (
+                        <button 
+                            onClick={() => dispatch({type: 'DECLINE_BUY', payload: {tId: t.id}})} 
+                            className="col-span-2 bg-purple-900/50 hover:bg-purple-800 text-purple-200 py-2 rounded font-bold border border-purple-600 text-xs"
+                        >
+                            RECHAZAR (EL ESTADO COMPRA)
+                        </button>
+                    )}
+
                     {isBlockedByGov && <div className="col-span-2 bg-red-900/50 p-2 text-center text-xs text-red-300 rounded font-bold border border-red-800">🚫 Gobierno de Izquierdas: Compra Prohibida</div>}
                     
                     {isOwner && !t.isBroken && !isShares && (

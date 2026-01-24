@@ -8,11 +8,11 @@ import { p, rail } from './helpers';
 
 export const DIAGONAL_TILES: Partial<TileData>[] = [
   // === ARM 1 (Top-Left) [Indices 64-72] ===
-  p('Cocina Pablo', 'blue', 220, 'Rojo', 'gym'),      // 64 (Entry from Parkie #32)
+  p('Cocina Pablo', 'blue', 220, 'Rojo'),      // 64 (Entry from Parkie #32) - REMOVED GYM
   p('Ereñokoa Ez Dan Kanterie', 'slate', 470, 'Gaztelugatxe'), // 65
   p('Artiako Kanterie', 'slate', 460, 'Gaztelugatxe'), // 66
-  p('Artiako GYM-e', 'violet', 480, 'Sirimiri'),      // 67
-  p('Ereñoko GYM-e', 'violet', 490, 'Sirimiri'),      // 68
+  p('Artiako GYM-e', 'violet', 480, 'Sirimiri', 'gym'),      // 67 - ADDED GYM
+  p('Ereñoko GYM-e', 'violet', 490, 'Sirimiri', 'gym'),      // 68 - ADDED GYM
   p('Frontoiko Bici estatikak', 'violet', 500, 'Sirimiri'), // 69
   { type: TileType.SLOTS, name: 'Tragaperras' },      // 70
   { type: TileType.TAX, name: 'Hacienda' },           // 71

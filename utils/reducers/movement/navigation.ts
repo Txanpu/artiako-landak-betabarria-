@@ -55,7 +55,7 @@ export const navigationReducer = (state: GameState, action: any): GameState => {
                 if (nextPos === 0) {
                     // 1. Calculate Salary based on Government
                     let salaryLog = null;
-                    const salaryAmount = calculateGoSalary(state.gov, p);
+                    let salaryAmount = calculateGoSalary(state.gov, p);
 
                     if (shouldBlockWelfare(state)) {
                         salaryLog = 'Huelga general: sin ayudas en SALIDA.';
@@ -71,7 +71,11 @@ export const navigationReducer = (state: GameState, action: any): GameState => {
                             logs.push(`🖨️ Banco Central (${state.gov.toUpperCase()}) imprime dinero para salarios.`);
                         }
 
-                        if (newMoney >= salaryAmount) {
+                        // LIBERTARIAN CHECK: NO HAY PLATA
+                        if (state.gov === 'libertarian' && newMoney < salaryAmount) {
+                            salaryLog = `🦁 Gobierno Libertario: "NO HAY PLATA". No se paga salario.`;
+                            salaryAmount = 0;
+                        } else if (newMoney >= salaryAmount) {
                             p.money += salaryAmount;
                             newMoney -= salaryAmount;
                             salaryLog = `💰 Salario ${state.gov}: ${p.name} recibe ${formatMoney(salaryAmount)}.`;
@@ -79,8 +83,7 @@ export const navigationReducer = (state: GameState, action: any): GameState => {
                             salaryLog = `💸 Estado sin fondos (${formatMoney(newMoney)}) para salario.`;
                         }
                     } else {
-                        if (state.gov === 'libertarian') salaryLog = '🏛️ Gobierno Libertario: No hay salario público.';
-                        else if (state.gov === 'anarchy') salaryLog = '🔥 Anarquía: No hay estado que pague.';
+                        if (state.gov === 'anarchy') salaryLog = '🔥 Anarquía: No hay estado que pague.';
                         else salaryLog = '🚫 No cumples los requisitos para cobrar salario.';
                     }
                     
@@ -151,7 +154,7 @@ export const navigationReducer = (state: GameState, action: any): GameState => {
             if (nextPos === 0) {
                 // Reuse Salary Logic
                 let salaryLog = null;
-                const salaryAmount = calculateGoSalary(state.gov, p);
+                let salaryAmount = calculateGoSalary(state.gov, p);
 
                 if (shouldBlockWelfare(state)) {
                     salaryLog = 'Huelga general: sin ayudas en SALIDA.';
@@ -167,7 +170,10 @@ export const navigationReducer = (state: GameState, action: any): GameState => {
                          logs.push(`🖨️ Banco Central (${state.gov.toUpperCase()}) imprime dinero para salarios.`);
                      }
 
-                     if (newMoney >= salaryAmount) {
+                     if (state.gov === 'libertarian' && newMoney < salaryAmount) {
+                        salaryLog = `🦁 Gobierno Libertario: "NO HAY PLATA".`;
+                        salaryAmount = 0;
+                     } else if (newMoney >= salaryAmount) {
                         p.money += salaryAmount;
                         newMoney -= salaryAmount;
                         salaryLog = `💰 Salario ${state.gov}: ${p.name} recibe ${formatMoney(salaryAmount)}.`;
@@ -175,8 +181,7 @@ export const navigationReducer = (state: GameState, action: any): GameState => {
                         salaryLog = `💸 Estado sin fondos.`;
                     }
                 } else {
-                     if (state.gov === 'libertarian') salaryLog = '🏛️ Gobierno Libertario: No hay salario.';
-                     else if (state.gov === 'anarchy') salaryLog = '🔥 Anarquía: No hay estado.';
+                     if (state.gov === 'anarchy') salaryLog = '🔥 Anarquía: No hay estado.';
                      else salaryLog = '🚫 No cobras.';
                 }
                 if (salaryLog) logs = [salaryLog, ...logs];

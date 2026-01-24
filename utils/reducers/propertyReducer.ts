@@ -1,6 +1,6 @@
 
 import { GameState } from '../../types';
-import { buyProperty } from './property/acquisition';
+import { buyProperty, stateForceBuy } from './property/acquisition';
 import { manageProperty } from './property/management';
 import { payRent } from './property/rent';
 import { commonPropertyReducer } from './property/common';
@@ -78,12 +78,8 @@ export const propertyReducer = (state: GameState, action: any): GameState => {
         } 
         else {
             // Mode 'pay': Trigger standard rent payment logic manually
-            // We reuse payRent but ensure we handle debt if funds low
-            
             const rent = getRent(tile, state.dice[0]+state.dice[1], state.tiles, state);
             if (player.money >= rent) {
-                // Call standard payRent reducer logic (simulated by updating state directly to save complexity)
-                // Actually, calling payRent() function from rent.ts is cleaner if imported
                 const paidState = payRent(state);
                 return { ...paidState, anarchyActionPending: false };
             } else {
@@ -101,6 +97,16 @@ export const propertyReducer = (state: GameState, action: any): GameState => {
     switch (action.type) {
         case 'BUY_PROP': 
             return buyProperty(state);
+        
+        case 'DECLINE_BUY': {
+            const { tId } = action.payload;
+            // AUTHORITARIAN RULE: If you don't buy, State buys and distributes
+            if (state.gov === 'authoritarian') {
+                return stateForceBuy(state, tId);
+            }
+            // Standard behavior: Just close modal (or auction if configured elsewhere, but simple close here)
+            return { ...state, selectedTileId: null };
+        }
             
         case 'BUILD_HOUSE':
         case 'SELL_HOUSE':

@@ -20,6 +20,11 @@ import { birdHuntReducer } from './reducers/minigames/birdHuntReducer'; // Added
 export const gameReducer = (state: GameState, action: any): GameState => {
     let nextState = state;
 
+    // --- PAUSE MENU ---
+    if (action.type === 'TOGGLE_PAUSE') {
+        return { ...state, isPaused: !state.isPaused };
+    }
+
     // --- AVATAR SELECTION ---
     if (action.type === 'TOGGLE_AVATAR_SELECTION') {
         return { ...state, showAvatarSelection: !state.showAvatarSelection };

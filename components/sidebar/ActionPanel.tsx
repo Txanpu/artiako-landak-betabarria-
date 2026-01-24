@@ -79,6 +79,10 @@ export const ActionPanel: React.FC<Props> = ({ state, player, onRoll, isRolling,
         );
     }
 
+    // Determine Mode: ROLL vs ACTIONS
+    // If mustResolveProperty is true, force ACTIONS view even if !rolled (doubles)
+    const showRollMode = !state.rolled && state.pendingMoves === 0 && !isRolling && !actions.mustResolveProperty;
+
     return (
         <div className="p-4 grid grid-cols-4 gap-2 border-b border-slate-800">
             {/* MAIN ACTION AREA (Full Width) */}
@@ -87,13 +91,13 @@ export const ActionPanel: React.FC<Props> = ({ state, player, onRoll, isRolling,
                     <div className="w-full bg-blue-900/50 border border-blue-500 text-blue-200 text-center py-4 rounded-xl animate-pulse font-bold">
                         🗳️ ELECCIONES EN CURSO...
                     </div>
-                ) : !state.rolled && state.pendingMoves === 0 && !isRolling ? (
+                ) : showRollMode ? (
                     <div className="flex flex-col gap-2">
                         {/* 1. ROLL BUTTON */}
                         <button 
                             onClick={onRoll} 
                             disabled={isRolling} 
-                            className={`w-full relative overflow-hidden group py-4 rounded-xl shadow-lg border-b-4 active:border-b-0 active:translate-y-1 transition-all
+                            className={`w-full relative overflow-hidden group py-4 rounded-xl shadow-lg border-b-4 active:border-b-0 active:translate-y-1 transition-all disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed
                                 ${drugState.isHigh 
                                     ? 'bg-gradient-to-r from-pink-600 to-purple-600 border-pink-800 hover:from-pink-500 hover:to-purple-500' 
                                     : 'bg-gradient-to-r from-emerald-600 to-green-600 border-emerald-800 hover:from-emerald-500 hover:to-green-500'}
@@ -139,6 +143,16 @@ export const ActionPanel: React.FC<Props> = ({ state, player, onRoll, isRolling,
                                 {actions.canBuy && <ActionButton label="COMPRAR" sub={`$${currentTile.price}`} color="blue" onClick={() => dispatch({type: 'BUY_PROP'})} />}
                                 {actions.allowAuction && <ActionButton label="SUBASTAR" color="purple" onClick={() => dispatch({type: 'START_AUCTION', payload: currentTile.id})} />}
                                 
+                                {actions.canStateBuy && (
+                                    <button 
+                                        onClick={() => dispatch({type: 'DECLINE_BUY', payload: {tId: currentTile.id}})}
+                                        className="bg-purple-900 hover:bg-purple-800 border border-purple-600 text-purple-200 py-2 px-1 rounded-lg shadow-md text-[10px] font-black uppercase tracking-wider leading-none flex flex-col items-center justify-center"
+                                    >
+                                        <span>RECHAZAR</span>
+                                        <span className="text-[8px] opacity-70 mt-0.5">(ESTADO COMPRA)</span>
+                                    </button>
+                                )}
+
                                 {actions.isBlocked && (
                                     <div className="col-span-2 bg-red-950/50 border border-red-900 text-red-400 p-2 rounded text-[10px] text-center uppercase font-bold">
                                         🚫 Compra bloqueada por el Gobierno
@@ -147,9 +161,14 @@ export const ActionPanel: React.FC<Props> = ({ state, player, onRoll, isRolling,
                                 
                                 <button 
                                     onClick={() => dispatch({type: 'END_TURN'})} 
-                                    className="col-span-2 mt-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-lg border-b-4 border-slate-900 active:border-b-0 active:translate-y-1 transition-all uppercase tracking-wider text-sm"
+                                    disabled={actions.mustResolveProperty}
+                                    className={`col-span-2 mt-1 font-bold py-3 rounded-lg border-b-4 active:border-b-0 active:translate-y-1 transition-all uppercase tracking-wider text-sm
+                                        ${actions.mustResolveProperty 
+                                            ? 'bg-slate-800 text-gray-500 border-slate-900 cursor-not-allowed' 
+                                            : 'bg-slate-700 hover:bg-slate-600 text-white border-slate-900'}
+                                    `}
                                 >
-                                    Finalizar Turno
+                                    {actions.mustResolveProperty ? 'GESTIONA LA PROPIEDAD' : 'Finalizar Turno'}
                                 </button>
                             </div>
                         )}

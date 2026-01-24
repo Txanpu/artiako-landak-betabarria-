@@ -123,6 +123,7 @@ export interface GameState {
   logs: string[];
   turnCount: number;
   gameStarted: boolean;
+  isPaused: boolean; // NEW: Pause State
   
   // Interaction
   auction: AuctionState | null;
@@ -244,9 +245,10 @@ export interface GameState {
   
   // Roles Data
   fbiGuesses: Record<number, Record<number, string>>; 
+  fbiRewardQueued?: boolean; // NEW: True when FBI identified all, waiting for Tax tile
   vatIn: number;  
   vatOut: number; 
-  fbiExpropriationSlots?: number; // FBI Reward
+  fbiExpropriationSlots?: number; // FBI Reward Slots
   
   // Flags
   usedTransportHop: boolean;
